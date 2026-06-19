@@ -6,6 +6,31 @@ Recommended setup: deploy **`server/` only** (API for mobile). You can add the w
 
 ---
 
+## Build failed: `vite: not found`?
+
+Railway is building from the **repo root** and running `npm run build`, but Vite is a dev dependency and gets skipped in production installs.
+
+**Fix A — API only (recommended for mobile):**
+
+1. Railway → **Settings** → **Source** → **Root Directory** → `server`
+2. **Settings** → **Build** → clear any custom **Build Command** (leave empty)
+3. Redeploy
+
+**Fix B — Web + API from repo root:**
+
+1. **Root Directory** → leave empty `/` (repo root)
+2. Push the repo with root `railway.toml` (uses `npm install --include=dev` for the client)
+3. Or set **Build Command** to:
+   ```bash
+   npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client
+   ```
+4. **Start Command:**
+   ```bash
+   NODE_ENV=production npm start --prefix server
+   ```
+
+---
+
 ## Prerequisites
 
 - [Railway account](https://railway.app) (free tier to start)
@@ -35,7 +60,8 @@ mongodb+srv://USER:PASSWORD@cluster.mongodb.net/BakiBook?retryWrites=true&w=majo
 2. **Deploy from GitHub repo** → select `BakiBookApp`
 3. After the service is created, open **Settings** → **Source**
 4. Set **Root Directory** to: `server`
-5. **Save** — Railway will redeploy using `server/package.json` and `server/railway.toml`
+5. **Settings** → **Build** → ensure **Build Command** is **empty** (do not use `npm run build`)
+6. **Save** — Railway will redeploy using `server/package.json` and `server/railway.toml`
 
 ---
 
@@ -120,17 +146,20 @@ Demo logins (if seeded): `shopkeeper@bakibook.demo` / `Demo@123`
 If you also want the React web app on Railway:
 
 1. Set **Root Directory** to `/` (repo root), not `server`
-2. **Build command:**
-   ```bash
-   npm install && npm install --prefix server && npm install --prefix client && npm run build --prefix client
-   ```
-3. **Start command:**
-   ```bash
-   NODE_ENV=production npm start --prefix server
-   ```
-4. Set `CLIENT_URL` and `SERVER_URL` to your Railway domain
+2. Use the root `railway.toml` (already in the repo), **or** set manually:
+   - **Build command:**
+     ```bash
+     npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client
+     ```
+   - **Start command:**
+     ```bash
+     NODE_ENV=production npm start --prefix server
+     ```
+3. Set `CLIENT_URL` and `SERVER_URL` to your Railway domain
 
 The server serves `client/dist` when that folder exists after build.
+
+**Do not** use plain `npm run build` as the Railway build command — it fails because Vite is not installed without `--include=dev`.
 
 ---
 
@@ -147,7 +176,8 @@ The server serves `client/dist` when that folder exists after build.
 
 | Issue | Fix |
 |-------|-----|
-| Build fails | Confirm **Root Directory** is `server` |
+| Build fails | Confirm **Root Directory** is `server` and **Build Command** is empty; or use root `railway.toml` for full-stack |
+| `vite: not found` | Root deploy without dev deps — use Fix A or B at top of this doc |
 | `MongoServerError` / connection | Atlas IP allowlist; correct `MONGODB_URI` |
 | Health check fails | Wait for deploy; check logs for crash on startup |
 | Mobile app “Network request failed” | Use `https://...up.railway.app/api` (include `/api`) |
