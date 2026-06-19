@@ -383,6 +383,12 @@ Shopkeepers add customers with an email. Customers sign up with the same email a
 
 ## Production deployment
 
+### Railway (API + optional web)
+
+See **[deploy/railway/DEPLOY_RAILWAY.md](deploy/railway/DEPLOY_RAILWAY.md)** for step-by-step hosting on Railway (recommended for mobile + Google Play).
+
+### Generic production
+
 1. Set `NODE_ENV=production` on the server.
 2. Set `CLIENT_URL` and `SERVER_URL` to your production domains.
 3. Build the client: `npm run build`.

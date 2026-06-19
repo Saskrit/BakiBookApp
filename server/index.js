@@ -2,6 +2,7 @@ import './config/env.js';
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
@@ -180,16 +181,20 @@ app.get('/api/stats', async (_req, res) => {
 
 if (process.env.NODE_ENV === 'production') {
   const clientBuild = path.join(__dirname, '../client/dist');
-  app.use(express.static(clientBuild));
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(clientBuild, 'index.html'));
-  });
+  if (fs.existsSync(path.join(clientBuild, 'index.html'))) {
+    app.use(express.static(clientBuild));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(clientBuild, 'index.html'));
+    });
+  } else {
+    console.warn('client/dist not found — API-only mode (fine for mobile backend)');
+  }
 }
 
 const server = http.createServer(app);
 initSocket(server);
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`BakiBook server running on port ${PORT}`);
 });
 

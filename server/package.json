@@ -9,6 +9,9 @@
     "start": "node index.js",
     "seed": "node utils/seedData.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.10.0",
