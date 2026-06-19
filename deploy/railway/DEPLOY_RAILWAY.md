@@ -178,6 +178,8 @@ The server serves `client/dist` when that folder exists after build.
 |-------|-----|
 | Build fails | Confirm **Root Directory** is `server` and **Build Command** is empty; or use root `railway.toml` for full-stack |
 | `vite: not found` | Root deploy without dev deps — use Fix A or B at top of this doc |
+| EAS `tar: Permission denied` | Project in **OneDrive** — see [mobile/EAS_BUILD.md](../mobile/EAS_BUILD.md) |
+| EAS build missing `src/` | Mobile was a nested git repo — commit all `mobile/` files and push before building |
 | `MongoServerError` / connection | Atlas IP allowlist; correct `MONGODB_URI` |
 | Health check fails | Wait for deploy; check logs for crash on startup |
 | Mobile app “Network request failed” | Use `https://...up.railway.app/api` (include `/api`) |

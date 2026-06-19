@@ -1,0 +1,12 @@
+# EAS upload ignore (see https://docs.expo.dev/build-reference/easignore/)
+node_modules/
+.expo/
+dist/
+.git/
+.claude/
+**/.claude/
+*.md
+!README.md
+.env
+.env.*
+google-play-service-account.json
