@@ -1,0 +1,181 @@
+BakiBook – Complete Feature List
+1. Authentication & Account Management
+Shopkeeper
+Register account
+Login/Logout
+Email verification
+Forgot password
+Change password
+Profile management
+Shop information setup
+Customer
+Phone number registration (Firebase OTP)
+Login using phone number
+Email verification
+Profile management
+Password reset
+2. Shop Management
+Create shop profile
+Shop logo upload
+Shop address and contact information
+Business category selection
+Multiple staff accounts (optional)
+Shop settings management
+3. Customer Management
+Add customer manually
+Edit customer details
+Delete customer
+Customer search
+Customer profile page
+Customer photo upload
+Customer phone number
+Customer email
+Customer address
+Customer notes
+Customer status (Active/Inactive)
+4. Digital Credit Ledger (Core Feature)
+Add credit transaction
+Record purchased items
+Record quantity
+Record item price
+Auto-calculate totals
+Update transactions
+Delete transactions
+View transaction history
+Filter by date
+Filter by customer
+Search transactions
+Running balance calculation
+5. Payment Management
+Record customer payments
+Partial payment support
+Full payment settlement
+Payment history
+Payment receipts
+Outstanding balance calculation
+Payment notes
+Payment confirmation
+6. Customer Ledger
+
+Customer can view:
+
+Current due amount
+All purchases
+Payment history
+Remaining balance
+Transaction timeline
+Monthly statements
+Download receipts
+7. Dashboard Analytics
+Shopkeeper Dashboard
+Total customers
+Total outstanding balance
+Total credit given
+Total payments collected
+Today's transactions
+Monthly transactions
+Recent activities
+Top debtors
+Customers with overdue balances
+8. Notification System
+In-App Notifications
+Customer Notifications
+New credit added
+Payment recorded
+Due reminder
+Monthly statement available
+Account updates
+Shopkeeper Notifications
+New customer registration
+Overdue customers
+Large outstanding balances
+Upcoming due reminders
+9. Email Integration
+
+Automatic emails for:
+
+Account verification
+Password reset
+New credit notification
+Payment confirmation
+Monthly statements
+Due reminders
+10. QR Code System
+Unique QR for every customer
+Scan customer QR
+Open customer profile instantly
+Quick transaction entry
+Download customer QR
+11. PDF Reports
+Customer Reports
+Credit history
+Payment history
+Account statement
+Outstanding balance report
+Shop Reports
+Daily report
+Weekly report
+Monthly report
+Customer-wise report
+Outstanding dues report
+12. Search & Filtering
+Search customer by name
+Search customer by phone
+Search transactions
+Date range filters
+Payment filters
+Outstanding balance filters
+13. Due Tracking System
+Due amount tracking
+Due aging report
+Overdue customer identification
+Due reminders
+Customer payment behavior tracking
+14. Credit Score System (Unique Feature)
+
+Automatically classify customers:
+
+Excellent
+Always pays on time
+Good
+Minor delays
+Average
+Regular delays
+Risky
+Frequently overdue
+Defaulter
+Long unpaid balances
+15. Customer Portal
+
+Customer can:
+
+View account balance
+View purchases
+View payment history
+Download statements
+Receive notifications
+Update profile
+View due reminders
+16. Activity Logs
+Track every action
+Credit added logs
+Payment logs
+Customer update logs
+Login history
+Audit trail
+17. Security Features
+JWT Authentication
+Firebase OTP verification
+Password hashing
+Role-based authorization
+Secure API endpoints
+Session management
+18. Admin Panel (Optional but Highly Impressive)
+System Admin
+View all shops
+Manage users
+Monitor transactions
+System analytics
+Platform settings
+Account suspension
+User management

@@ -1,0 +1,801 @@
+import crypto from 'crypto';
+import User from '../models/User.js';
+import Customer from '../models/Customer.js';
+import generateToken from '../utils/generateToken.js';
+import { createEmailToken, hashToken } from '../utils/emailToken.js';
+import {
+  sendWelcomeEmail,
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} from '../utils/emailService.js';
+import { verifyGoogleToken } from '../utils/googleVerify.js';
+import { resolveImageUrl } from '../utils/imageUpload.js';
+import { isAdminEmail, getAdminEmails, matchesAdminCredentials, getAdminEnvEmail, getAdminEnvPassword } from '../utils/adminCheck.js';
+import { notifyPendingInvitationsForUser } from './linkController.js';
+import { createNotification } from '../utils/notify.js';
+
+const isShopDetailsComplete = (user) =>
+  Boolean(user.shopName?.trim() && user.shopLocation?.trim() && user.shopImage);
+
+const resolveShopVerificationStatus = (user) => {
+  if (user.role !== 'shopkeeper') return null;
+  if (user.shopVerificationStatus) return user.shopVerificationStatus;
+  return user.isShopVerified ? 'verified' : 'incomplete';
+};
+
+const notifyAdminsShopPending = async (shopkeeper) => {
+  const adminEmails = getAdminEmails();
+  if (!adminEmails.length) return;
+
+  const admins = await User.find({ email: { $in: adminEmails } });
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification({
+        userId: admin._id,
+        title: 'Shop verification pending',
+        body: `${shopkeeper.shopName || shopkeeper.fullName} submitted shop details for admin review.`,
+        type: 'info',
+      })
+    )
+  );
+};
+
+const applyShopVerificationState = async (user, { notifyAdmin = true } = {}) => {
+  if (user.role !== 'shopkeeper') return;
+
+  if (isShopDetailsComplete(user)) {
+    user.shopVerificationStatus = 'pending';
+    user.isShopVerified = false;
+    if (notifyAdmin) await notifyAdminsShopPending(user);
+  } else {
+    user.shopVerificationStatus = 'incomplete';
+    user.isShopVerified = false;
+  }
+};
+
+const formatUser = (user) => {
+  const shopVerificationStatus = resolveShopVerificationStatus(user);
+
+  return {
+    id: user._id,
+    role: user.role,
+    fullName: user.fullName,
+    profileImage: user.profileImage || '',
+    email: user.email,
+    shopName: user.shopName || '',
+    shopLocation: user.shopLocation || '',
+    shopImage: user.shopImage || '',
+    authProvider: user.authProvider || 'local',
+    isEmailVerified: user.isEmailVerified,
+    isShopVerified: user.isShopVerified,
+    shopVerificationStatus,
+    needsShopSetup: user.role === 'shopkeeper' && shopVerificationStatus !== 'verified',
+    isAdmin: isAdminEmail(user.email),
+    createdAt: user.createdAt,
+  };
+};
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const getCustomerPendingLinkCount = async (user) => {
+  if (user.role !== 'customer' || !user.email) return 0;
+  return Customer.countDocuments({
+    email: user.email.toLowerCase(),
+    linkStatus: 'pending',
+    linkedUser: null,
+  });
+};
+
+const sendAuthResponse = async (res, user, message, status = 200) => {
+  const token = generateToken(user._id, user.role);
+  const pendingLinkCount =
+    user.role === 'customer' ? await getCustomerPendingLinkCount(user) : 0;
+
+  return res.status(status).json({
+    success: true,
+    message,
+    token,
+    user: formatUser(user),
+    pendingLinkCount,
+  });
+};
+
+const resolveAdminLoginUser = async () => {
+  const email = getAdminEnvEmail();
+  const password = getAdminEnvPassword();
+  if (!email || !password) return null;
+
+  let user = await User.findOne({ email, role: 'shopkeeper' }).select('+password');
+
+  if (!user) {
+    return User.create({
+      role: 'shopkeeper',
+      fullName: 'BakiBook Admin',
+      email,
+      password,
+      isEmailVerified: true,
+      isShopVerified: true,
+      shopVerificationStatus: 'verified',
+      shopName: 'BakiBook Admin',
+      shopLocation: 'Nepal',
+    });
+  }
+
+  user.password = password;
+  user.isEmailVerified = true;
+  user.isShopVerified = true;
+  user.shopVerificationStatus = 'verified';
+  await user.save();
+  return user;
+};
+
+const sendRegistrationEmails = async (user, rawVerificationToken) => {
+  try {
+    await sendWelcomeEmail(user);
+    await sendVerificationEmail(user, rawVerificationToken);
+    console.log(`Verification email sent to ${user.email}`);
+  } catch (error) {
+    console.error(`Failed to send email to ${user.email}:`, error.message);
+  }
+};
+
+export const registerUser = async (req, res) => {
+  try {
+    const { role, fullName, email, profileImage, shopName, shopLocation, shopImage, password } = req.body;
+
+    if (!role || !['shopkeeper', 'customer'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role selected' });
+    }
+
+    if (!fullName?.trim()) {
+      return res.status(400).json({ success: false, message: 'Full name is required' });
+    }
+
+    if (!email?.trim() || !emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: 'Valid email address is required' });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Shopkeeper-added customers only exist in Customer records until the person signs up.
+    // Block signup only when this email is already registered for the same role.
+    const existingUser = await User.findOne({ email: normalizedEmail, role });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message:
+          role === 'customer'
+            ? 'Email address is already registered. Please login instead.'
+            : 'Email address is already registered',
+      });
+    }
+
+    const rawVerificationToken = createEmailToken();
+
+    const resolvedProfileImage = await resolveImageUrl(profileImage, 'profiles');
+    const resolvedShopImage =
+      role === 'shopkeeper' && shopImage
+        ? await resolveImageUrl(shopImage, 'shops')
+        : '';
+
+    const shopComplete =
+      role === 'shopkeeper' &&
+      shopName?.trim() &&
+      shopLocation?.trim() &&
+      resolvedShopImage;
+
+    const user = await User.create({
+      role,
+      fullName: fullName.trim(),
+      profileImage: resolvedProfileImage,
+      email: normalizedEmail,
+      shopName: role === 'shopkeeper' ? (shopName?.trim() || '') : '',
+      shopLocation: role === 'shopkeeper' ? (shopLocation?.trim() || '') : '',
+      shopImage: resolvedShopImage,
+      shopVerificationStatus: shopComplete ? 'pending' : 'incomplete',
+      isShopVerified: false,
+      password,
+      emailVerificationToken: hashToken(rawVerificationToken),
+      emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
+    });
+
+    await sendRegistrationEmails(user, rawVerificationToken).catch((error) => {
+      console.error(`Failed to send registration email to ${user.email}:`, error.message);
+    });
+
+    let pendingLinkCount = 0;
+    if (role === 'customer') {
+      pendingLinkCount = await getCustomerPendingLinkCount(user);
+      notifyPendingInvitationsForUser(user).catch((error) => {
+        console.error(`Failed to notify pending invitations for ${user.email}:`, error.message);
+      });
+    } else if (shopComplete) {
+      notifyAdminsShopPending(user).catch((error) => {
+        console.error('Failed to notify admins about shop verification:', error.message);
+      });
+    }
+
+    const token = generateToken(user._id, user.role);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Account created! Please check your email to verify your account.',
+      token,
+      user: formatUser(user),
+      pendingLinkCount,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0];
+      return res.status(409).json({
+        success: false,
+        message: 'Email address is already registered',
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Registration failed',
+    });
+  }
+};
+
+export const loginUser = async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+
+    if (!identifier?.trim()) {
+      return res.status(400).json({ success: false, message: 'Email address is required' });
+    }
+
+    if (!password) {
+      return res.status(400).json({ success: false, message: 'Password is required' });
+    }
+
+    const trimmed = identifier.trim().toLowerCase();
+
+    if (!emailRegex.test(trimmed)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
+    }
+
+    if (matchesAdminCredentials(trimmed, password)) {
+      const adminUser = await resolveAdminLoginUser();
+      if (!adminUser) {
+        return res.status(500).json({
+          success: false,
+          message: 'Admin login is not configured on the server',
+        });
+      }
+
+      const token = generateToken(adminUser._id, adminUser.role);
+      return res.json({
+        success: true,
+        message: 'Login successful',
+        token,
+        user: formatUser(adminUser),
+      });
+    }
+
+    const users = await User.find({ email: trimmed }).select('+password');
+
+    if (!users.length) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    const matchedUsers = [];
+    for (const candidate of users) {
+      if (!candidate.password && candidate.googleId) continue;
+      if (candidate.password && (await candidate.matchPassword(password))) {
+        matchedUsers.push(candidate);
+      }
+    }
+
+    if (!matchedUsers.length) {
+      const googleOnly = users.find((candidate) => candidate.googleId && !candidate.password);
+      if (googleOnly) {
+        return res.status(401).json({
+          success: false,
+          message: 'This account uses Google sign-in. Please login with Google.',
+        });
+      }
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    const user =
+      matchedUsers.find((candidate) => isAdminEmail(candidate.email)) ||
+      matchedUsers.find((candidate) => candidate.role === 'shopkeeper') ||
+      matchedUsers[0];
+
+    if (user.role === 'customer') {
+      notifyPendingInvitationsForUser(user).catch((error) => {
+        console.error(`Failed to notify pending invitations for ${user.email}:`, error.message);
+      });
+    }
+
+    return sendAuthResponse(res, user, 'Login successful');
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Login failed',
+    });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Verification token is required' });
+    }
+
+    const hashed = hashToken(token);
+
+    const user = await User.findOne({
+      emailVerificationToken: hashed,
+      emailVerificationExpires: { $gt: Date.now() },
+    }).select('+emailVerificationToken +emailVerificationExpires');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification link',
+      });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Email verified successfully!',
+      user: formatUser(user),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Email verification failed',
+    });
+  }
+};
+
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select(
+      '+emailVerificationToken +emailVerificationExpires'
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ success: false, message: 'Email is already verified' });
+    }
+
+    const rawVerificationToken = createEmailToken();
+    user.emailVerificationToken = hashToken(rawVerificationToken);
+    user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+
+    await sendVerificationEmail(user, rawVerificationToken);
+
+    return res.json({
+      success: true,
+      message: 'Verification email sent! Please check your inbox.',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to resend verification email',
+    });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email?.trim()) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() }).select(
+      '+passwordResetToken +passwordResetExpires'
+    );
+
+    if (user && user.password) {
+      const rawResetToken = createEmailToken();
+      user.passwordResetToken = hashToken(rawResetToken);
+      user.passwordResetExpires = Date.now() + 60 * 60 * 1000;
+      await user.save();
+
+      await sendPasswordResetEmail(user, rawResetToken);
+    }
+
+    return res.json({
+      success: true,
+      message: 'If an account exists with that email, a password reset link has been sent.',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to process password reset request',
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Reset token is required' });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    const hashed = hashToken(token);
+
+    const user = await User.findOne({
+      passwordResetToken: hashed,
+      passwordResetExpires: { $gt: Date.now() },
+    }).select('+passwordResetToken +passwordResetExpires');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset link. Please request a new one.',
+      });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Password reset successfully! You can now log in with your new password.',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to reset password',
+    });
+  }
+};
+
+export const getMe = async (req, res) => {
+  return res.json({
+    success: true,
+    user: formatUser(req.user),
+  });
+};
+
+const linkGoogleToUser = async (user, googleUser, profileImage) => {
+  if (!user.profileImage && (profileImage || googleUser.picture)) {
+    user.profileImage = profileImage || googleUser.picture;
+  }
+  if (googleUser.emailVerified && !user.isEmailVerified) {
+    user.isEmailVerified = true;
+  }
+  if (!user.googleId) {
+    user.googleId = googleUser.googleId;
+    if (user.authProvider === 'local') {
+      user.authProvider = 'google';
+    }
+  }
+  await user.save();
+  return user;
+};
+
+const sendAuthSuccess = (res, user, message, status = 200) =>
+  sendAuthResponse(res, user, message, status);
+
+export const googleAuth = async (req, res) => {
+  try {
+    const {
+      credential,
+      role,
+      mode,
+      profileImage,
+      shopName,
+      shopLocation,
+      shopImage,
+    } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({ success: false, message: 'Google credential is required' });
+    }
+
+    if (!mode || !['login', 'register'].includes(mode)) {
+      return res.status(400).json({ success: false, message: 'Invalid auth mode' });
+    }
+
+    if (mode === 'register' && (!role || !['shopkeeper', 'customer'].includes(role))) {
+      return res.status(400).json({ success: false, message: 'Invalid role selected' });
+    }
+
+    let googleUser;
+    try {
+      googleUser = await verifyGoogleToken(credential);
+    } catch {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Google sign-in. Please try again.',
+      });
+    }
+
+    const byGoogleId = await User.findOne({ googleId: googleUser.googleId });
+
+    if (mode === 'login') {
+      let user = byGoogleId;
+
+      if (!user) {
+        const byEmail = await User.find({ email: googleUser.email });
+        if (!byEmail.length) {
+          return res.status(404).json({
+            success: false,
+            message: 'No account found with this Google account. Please register first.',
+          });
+        }
+
+        user =
+          byEmail.find((candidate) => isAdminEmail(candidate.email)) ||
+          byEmail.find((candidate) => candidate.role === 'shopkeeper') ||
+          byEmail[0];
+      }
+
+      await linkGoogleToUser(user, googleUser, profileImage);
+      if (user.role === 'customer') {
+        notifyPendingInvitationsForUser(user).catch((error) => {
+          console.error(`Failed to notify pending invitations for ${user.email}:`, error.message);
+        });
+      }
+      return sendAuthSuccess(res, user, 'Login successful');
+    }
+
+    if (!role || !['shopkeeper', 'customer'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role selected' });
+    }
+
+    const byEmail = await User.findOne({ email: googleUser.email, role });
+
+    if (byGoogleId && byEmail && byGoogleId._id.toString() !== byEmail._id.toString()) {
+      return res.status(409).json({
+        success: false,
+        message: 'This Google account and email belong to different BakiBook accounts. Contact support.',
+      });
+    }
+
+    let user = byGoogleId || byEmail;
+
+    if (user && user.role !== role) {
+      return res.status(409).json({
+        success: false,
+        message: `An account with this email exists as a ${user.role}. Please register with the matching account type.`,
+      });
+    }
+
+    // Register mode — if account already exists, link Google and sign in
+    if (user) {
+      const hadGoogle = Boolean(user.googleId);
+      await linkGoogleToUser(user, googleUser, profileImage);
+      if (user.role === 'customer') {
+        notifyPendingInvitationsForUser(user).catch((error) => {
+          console.error(`Failed to notify pending invitations for ${user.email}:`, error.message);
+        });
+      }
+      return sendAuthSuccess(
+        res,
+        user,
+        hadGoogle ? 'Signed in with Google' : 'Google account linked — signed in successfully'
+      );
+    }
+
+    const resolvedProfileImage = await resolveImageUrl(
+      profileImage || googleUser.picture,
+      'profiles'
+    );
+    const resolvedShopImage =
+      role === 'shopkeeper' ? await resolveImageUrl(shopImage, 'shops') : '';
+
+    try {
+      user = await User.create({
+        role,
+        fullName: googleUser.fullName,
+        profileImage: resolvedProfileImage,
+        email: googleUser.email,
+        shopName: role === 'shopkeeper' ? (shopName?.trim() || '') : '',
+        shopLocation: role === 'shopkeeper' ? (shopLocation?.trim() || '') : '',
+        shopImage: resolvedShopImage,
+        googleId: googleUser.googleId,
+        authProvider: 'google',
+        isEmailVerified: googleUser.emailVerified !== false,
+        shopVerificationStatus: 'incomplete',
+        isShopVerified: false,
+      });
+    } catch (createError) {
+      // Race: double submit (e.g. React StrictMode) may create user on first request
+      if (createError.code === 11000) {
+        user = await User.findOne({
+          $or: [
+            { email: googleUser.email, role },
+            { googleId: googleUser.googleId },
+          ],
+        });
+
+        if (user && user.role === role) {
+          await linkGoogleToUser(user, googleUser, profileImage);
+          if (user.role === 'customer') {
+            notifyPendingInvitationsForUser(user).catch((error) => {
+              console.error(`Failed to notify pending invitations for ${user.email}:`, error.message);
+            });
+          }
+          return sendAuthSuccess(res, user, 'Signed in with Google');
+        }
+
+        return res.status(409).json({
+          success: false,
+          message: 'An account with this email already exists under a different role. Use Login and pick the correct role.',
+        });
+      }
+      throw createError;
+    }
+
+    sendWelcomeEmail(user).catch((error) => {
+      console.error(`Failed to send welcome email to ${user.email}:`, error.message);
+    });
+
+    if (role === 'customer') {
+      notifyPendingInvitationsForUser(user).catch((error) => {
+        console.error(`Failed to notify pending invitations for ${user.email}:`, error.message);
+      });
+    } else if (role === 'shopkeeper' && isShopDetailsComplete(user)) {
+      user.shopVerificationStatus = 'pending';
+      user.isShopVerified = false;
+      await user.save();
+      notifyAdminsShopPending(user).catch((error) => {
+        console.error('Failed to notify admins about shop verification:', error.message);
+      });
+    }
+
+    return sendAuthSuccess(res, user, 'Account created successfully with Google!', 201);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Google authentication failed',
+    });
+  }
+};
+
+export const completeShopProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.role !== 'shopkeeper') {
+      return res.status(403).json({ success: false, message: 'Only shopkeepers can update shop details' });
+    }
+
+    const { shopName, shopLocation, shopImage } = req.body;
+
+    if (!shopName?.trim()) {
+      return res.status(400).json({ success: false, message: 'Shop name is required' });
+    }
+
+    if (!shopLocation?.trim()) {
+      return res.status(400).json({ success: false, message: 'Shop location is required' });
+    }
+
+    if (!shopImage) {
+      return res.status(400).json({ success: false, message: 'Shop image is required' });
+    }
+
+    user.shopName = shopName.trim();
+    user.shopLocation = shopLocation.trim();
+    user.shopImage = await resolveImageUrl(shopImage, 'shops');
+    await applyShopVerificationState(user);
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Shop details submitted for admin verification',
+      user: formatUser(user),
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'Phone number is already registered' });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to save shop details',
+    });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const { fullName, profileImage, password, shopName, shopLocation, shopImage } = req.body;
+
+    if (fullName?.trim()) {
+      user.fullName = fullName.trim();
+    }
+
+    if (profileImage) {
+      user.profileImage = await resolveImageUrl(profileImage, 'profiles');
+    }
+
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+      }
+      user.password = password;
+    }
+
+    if (user.role === 'shopkeeper') {
+      let shopChanged = false;
+
+      if (shopName !== undefined) {
+        user.shopName = shopName.trim();
+        shopChanged = true;
+      }
+      if (shopLocation !== undefined) {
+        user.shopLocation = shopLocation.trim();
+        shopChanged = true;
+      }
+      if (shopImage) {
+        user.shopImage = await resolveImageUrl(shopImage, 'shops');
+        shopChanged = true;
+      }
+
+      if (shopChanged) {
+        await applyShopVerificationState(user);
+      }
+    }
+
+    await user.save();
+
+    const shopSubmitted =
+      user.role === 'shopkeeper' &&
+      resolveShopVerificationStatus(user) === 'pending' &&
+      isShopDetailsComplete(user);
+
+    return res.json({
+      success: true,
+      message: shopSubmitted
+        ? 'Shop details submitted for admin verification'
+        : 'Profile updated successfully',
+      user: formatUser(user),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update profile',
+    });
+  }
+};
