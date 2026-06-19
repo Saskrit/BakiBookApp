@@ -50,14 +50,21 @@ export default function PaymentsScreen() {
         </>
       }
       ListEmptyComponent={<Text style={styles.empty}>No payments recorded yet.</Text>}
-      renderItem={({ item }) => (
-        <Card>
-          <Text style={styles.amount}>{formatRs(Number(item.amount || 0))}</Text>
-          <Text style={styles.meta}>
-            {String(item.shopName || item.method || 'Payment')} · {String(item.date || '')}
-          </Text>
-        </Card>
-      )}
+      renderItem={({ item }) => {
+        const amountText =
+          typeof item.amount === 'string'
+            ? item.amount
+            : formatRs(Number(item.amount || 0));
+
+        return (
+          <Card>
+            <Text style={styles.amount}>{amountText}</Text>
+            <Text style={styles.meta}>
+              {String(item.shopName || item.method || 'Payment')} · {String(item.date || '')}
+            </Text>
+          </Card>
+        );
+      }}
     />
   );
 }

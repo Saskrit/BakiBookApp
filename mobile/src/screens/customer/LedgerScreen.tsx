@@ -50,15 +50,27 @@ export default function LedgerScreen() {
         </>
       }
       ListEmptyComponent={<Text style={styles.empty}>No ledger entries yet.</Text>}
-      renderItem={({ item }) => (
-        <Card>
-          <Text style={styles.rowTitle}>{String(item.title || item.type || 'Entry')}</Text>
-          <Text style={styles.rowMeta}>{String(item.date || item.shopName || '')}</Text>
-          {item.amount != null ? (
-            <Text style={styles.amount}>{formatRs(Number(item.amount))}</Text>
-          ) : null}
-        </Card>
-      )}
+      renderItem={({ item }) => {
+        const title = String(item.label || item.type || item.desc || item.title || 'Entry');
+        const amountText =
+          typeof item.amount === 'string'
+            ? item.amount
+            : item.creditAmount != null
+              ? `+ ${formatRs(Number(item.creditAmount))}`
+              : item.paymentAmount != null
+                ? `- ${formatRs(Number(item.paymentAmount))}`
+                : null;
+
+        return (
+          <Card>
+            <Text style={styles.rowTitle}>{title}</Text>
+            <Text style={styles.rowMeta}>
+              {[item.date, item.shopName].filter(Boolean).join(' · ')}
+            </Text>
+            {amountText ? <Text style={styles.amount}>{amountText}</Text> : null}
+          </Card>
+        );
+      }}
     />
   );
 }

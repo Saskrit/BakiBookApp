@@ -1,49 +1,86 @@
 # EAS Build troubleshooting
 
-## `tar: Permission denied` / missing `src/` files
+## `tar: Permission denied` (OneDrive + monorepo)
 
-### Cause 1 — Mobile code not in git (most common)
+### What went wrong
 
-`mobile/` was created with `create-expo-app`, which adds its own `.git`. EAS then built commit `eb87c9f` (empty template) **without** your `src/` screens and API code.
+Your project lives under **OneDrive**:
 
-**Fix:** Mobile is now part of the main repo. Commit and push:
+`OneDrive - London Metropolitan University\Document\BakiBookApp`
 
-```bash
-cd "path/to/BakiBookApp"
-git add mobile/
-git commit -m "Add BakiBook mobile app source for EAS builds"
-git push
+When EAS packages files, Windows/OneDrive often blocks reads → Linux on EAS cannot extract the archive:
+
+```
+tar: mobile/app.config.ts: Cannot open: Permission denied
+package.json does not exist in /home/expo/workingdir/build/mobile
 ```
 
-Then rebuild:
+EAS was also uploading the **whole monorepo** (`client/`, `server/`, `mobile/`) instead of only the app.
 
-```bash
-cd mobile
+### Fix — use the build script (recommended)
+
+From `mobile/`:
+
+```powershell
 npm run build:android
 ```
 
-### Cause 2 — OneDrive blocks file reads
+This script:
 
-Projects under **OneDrive** (`OneDrive - London Metropolitan University\...`) often cause `Permission denied` when EAS packages files.
+1. Copies `mobile/` to `%LOCALAPPDATA%\bakibook-eas-build` (local disk, not OneDrive)
+2. Skips `node_modules`, `.expo`, `.claude`
+3. Runs `eas build` from that clean folder
 
-**Fix (pick one):**
+Preview APK:
 
-1. In File Explorer → right-click project folder → **Always keep on this device**
-2. Move the project to a local path, e.g. `C:\Projects\BakiBookApp`, and build from there
-3. Close Cursor/terminals locking files, then rebuild
+```powershell
+npm run build:android:preview
+```
 
-### Cause 3 — `.claude/` folder
+### Fix — move project off OneDrive (permanent)
 
-Excluded via `mobile/.easignore` and `mobile/.gitignore`. If errors persist, delete `mobile/.claude/` locally.
+1. Copy `BakiBookApp` to e.g. `C:\Projects\BakiBookApp`
+2. Open that folder in Cursor
+3. Run `npm run build:android` from `mobile/`
+
+Or in File Explorer: right-click `BakiBookApp` → **Always keep on this device**, then retry.
+
+### Fix — build from GitHub (no local upload)
+
+1. Push all code to GitHub (including `mobile/src/`)
+2. On [expo.dev](https://expo.dev) → your project → **Build from GitHub**
+3. EAS clones on their servers (no OneDrive involved)
+
+---
+
+## Mobile code not in git
+
+If the build used commit `eb87c9f` (empty `create-expo-app` template only):
+
+```powershell
+cd "path\to\BakiBookApp"
+git add mobile/
+git commit -m "Add BakiBook mobile app source"
+git push
+```
 
 ---
 
 ## Before every EAS build
 
-```bash
+```powershell
 cd mobile
-git status          # ensure src/ is committed
 npm run build:android
 ```
 
-Build from the `mobile` folder, not the repo root.
+Do **not** run `eas build` from the repo root — only from `mobile/` or use the script above.
+
+---
+
+## Delete `.claude` if it causes issues
+
+```powershell
+Remove-Item -Recurse -Force mobile\.claude -ErrorAction SilentlyContinue
+```
+
+It is gitignored and excluded from EAS uploads.

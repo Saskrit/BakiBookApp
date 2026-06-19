@@ -25,7 +25,6 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
-    "eas-cli": "^16.3.2",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -33,9 +32,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:android": "eas build --platform android --profile production",
-    "build:android:preview": "eas build --platform android --profile preview",
-    "submit:android": "eas submit --platform android --profile production --latest"
+    "build:android": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 production",
+    "build:android:preview": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 preview",
+    "submit:android": "npx eas-cli submit --platform android --profile production --latest"
   },
   "private": true
 }

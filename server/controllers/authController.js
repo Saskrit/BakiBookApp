@@ -131,9 +131,11 @@ const resolveAdminLoginUser = async () => {
 
 const sendRegistrationEmails = async (user, rawVerificationToken) => {
   try {
-    await sendWelcomeEmail(user);
-    await sendVerificationEmail(user, rawVerificationToken);
-    console.log(`Verification email sent to ${user.email}`);
+    await Promise.all([
+      sendWelcomeEmail(user),
+      sendVerificationEmail(user, rawVerificationToken),
+    ]);
+    console.log(`Registration emails sent to ${user.email}`);
   } catch (error) {
     console.error(`Failed to send email to ${user.email}:`, error.message);
   }
@@ -203,7 +205,8 @@ export const registerUser = async (req, res) => {
       emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
     });
 
-    await sendRegistrationEmails(user, rawVerificationToken).catch((error) => {
+    // Do not block signup on SMTP — Gmail from Railway can take 30–120s.
+    sendRegistrationEmails(user, rawVerificationToken).catch((error) => {
       console.error(`Failed to send registration email to ${user.email}:`, error.message);
     });
 

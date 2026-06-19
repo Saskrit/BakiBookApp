@@ -34,7 +34,10 @@ export async function clearAuth() {
 export const login = (payload: { email: string; password: string }) =>
   request<AuthResponse>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      identifier: payload.email.trim(),
+      password: payload.password,
+    }),
   });
 
 export const register = (payload: {

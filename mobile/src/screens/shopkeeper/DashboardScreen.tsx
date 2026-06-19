@@ -4,7 +4,7 @@ import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-n
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fetchDashboardStats } from '../../api/shop';
-import { Button, Card, LoadingState, StatCard, Subtitle, Title } from '../../components/ui';
+import { Button, Card, ErrorText, LoadingState, StatCard, Subtitle, Title } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import { formatRs } from '../../utils/format';
 import type { RootStackParamList, ShopkeeperTabParamList } from '../../navigation/types';
@@ -27,6 +27,8 @@ export default function DashboardScreen() {
     Array<{ id: string; text: string; amount: string }>
   >([]);
 
+  const [error, setError] = useState('');
+
   const load = useCallback(async () => {
     const data = await fetchDashboardStats();
     setStats({
@@ -40,8 +42,11 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
+      setError('');
       load()
-        .catch(() => {})
+        .catch((err) =>
+          setError(err instanceof Error ? err.message : 'Failed to load dashboard')
+        )
         .finally(() => setLoading(false));
     }, [load])
   );
@@ -65,6 +70,7 @@ export default function DashboardScreen() {
     >
       <Title>Dashboard</Title>
       <Subtitle>Your shop at a glance</Subtitle>
+      {error ? <ErrorText message={error} /> : null}
 
       <View style={styles.statsRow}>
         <StatCard label="Outstanding Due" value={formatRs(stats.totalOutstanding)} accent />
