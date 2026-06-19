@@ -249,9 +249,10 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   try {
-    const { identifier, password } = req.body;
+    const { identifier, email, password } = req.body;
+    const loginEmail = (identifier || email)?.trim();
 
-    if (!identifier?.trim()) {
+    if (!loginEmail) {
       return res.status(400).json({ success: false, message: 'Email address is required' });
     }
 
@@ -259,7 +260,7 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Password is required' });
     }
 
-    const trimmed = identifier.trim().toLowerCase();
+    const trimmed = loginEmail.toLowerCase();
 
     if (!emailRegex.test(trimmed)) {
       return res.status(400).json({ success: false, message: 'Please enter a valid email address' });

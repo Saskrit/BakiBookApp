@@ -31,14 +31,17 @@ export async function clearAuth() {
   await AsyncStorage.removeItem(AUTH_KEY);
 }
 
-export const login = (payload: { email: string; password: string }) =>
-  request<AuthResponse>('/auth/login', {
+export const login = (payload: { email: string; password: string }) => {
+  const email = payload.email.trim();
+  return request<AuthResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({
-      identifier: payload.email.trim(),
+      identifier: email,
+      email,
       password: payload.password,
     }),
   });
+};
 
 export const register = (payload: {
   role: 'shopkeeper' | 'customer';

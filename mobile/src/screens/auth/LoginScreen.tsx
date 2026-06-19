@@ -15,10 +15,19 @@ export default function LoginScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Please enter your email address');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
-      const user = await login(email.trim(), password);
+      const user = await login(trimmedEmail, password);
       navigation.replace(user.role === 'shopkeeper' ? 'Shopkeeper' : 'Customer');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -42,13 +51,18 @@ export default function LoginScreen({ navigation }: Props) {
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
+            autoCorrect={false}
             keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
           />
           <Input
             label="Password"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            textContentType="password"
+            autoComplete="password"
           />
           <Button title="Sign In" onPress={handleLogin} loading={loading} />
           <Pressable onPress={() => navigation.navigate('Register')} style={styles.linkWrap}>
