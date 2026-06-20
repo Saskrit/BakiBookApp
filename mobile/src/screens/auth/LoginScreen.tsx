@@ -21,15 +21,17 @@ import {
   EmailIcon,
   EyeIcon,
   LockIcon,
+  OrDivider,
   authStyles,
 } from '../../components/auth/AuthUi';
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
 import { colors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
-  const { login } = useAuth();
+  const { login, googleSignIn } = useAuth();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState(__DEV__ ? 'shopkeeper@bakibook.demo' : '');
   const [password, setPassword] = useState(__DEV__ ? 'Demo@123' : '');
@@ -64,6 +66,19 @@ export default function LoginScreen({ navigation }: Props) {
       'Forgot Password?',
       'Password reset is available on the BakiBook web portal. Enter your registered email there to receive a reset link.',
     );
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    setError('');
+    setLoading(true);
+    try {
+      const user = await googleSignIn({ credential, mode: 'login' });
+      navigation.replace(user.role === 'shopkeeper' ? 'Shopkeeper' : 'Customer');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -152,6 +167,14 @@ export default function LoginScreen({ navigation }: Props) {
                 </>
               )}
             </Pressable>
+
+            <OrDivider />
+
+            <GoogleSignInButton
+              disabled={loading}
+              onCredential={handleGoogleCredential}
+              onError={setError}
+            />
 
             <View style={authStyles.altRow}>
               <Text style={authStyles.altText}>Don&apos;t have an account? </Text>

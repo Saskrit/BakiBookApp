@@ -11,6 +11,7 @@ export interface User {
   shopImage?: string;
   isEmailVerified?: boolean;
   isShopVerified?: boolean;
+  authProvider?: 'local' | 'google';
   shopVerificationStatus?: string;
   needsShopSetup?: boolean;
   isAdmin?: boolean;

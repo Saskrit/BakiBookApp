@@ -137,6 +137,16 @@ export function AuthFooter() {
   );
 }
 
+export function OrDivider() {
+  return (
+    <View style={authStyles.orDivider}>
+      <View style={authStyles.orLine} />
+      <Text style={authStyles.orText}>or</Text>
+      <View style={authStyles.orLine} />
+    </View>
+  );
+}
+
 export const authStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -292,5 +302,23 @@ export const authStyles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 8,
     padding: 4,
+  },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 18,
+    gap: 12,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  orText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

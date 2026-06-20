@@ -18,6 +18,9 @@ export type RootStackParamList = {
   ShopProfile: undefined;
   Products: undefined;
   Expenses: undefined;
+  Security: undefined;
+  HelpSupport: undefined;
+  LegalDocument: { slug: string; title: string };
 };
 
 export type ShopkeeperTabParamList = {

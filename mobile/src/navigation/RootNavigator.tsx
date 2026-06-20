@@ -16,6 +16,9 @@ import FilteredCustomersScreen from '../screens/shopkeeper/FilteredCustomersScre
 import ShopProfileScreen from '../screens/shopkeeper/ShopProfileScreen';
 import ProductsScreen from '../screens/shopkeeper/ProductsScreen';
 import ExpensesScreen from '../screens/shopkeeper/ExpensesScreen';
+import SecurityScreen from '../screens/shopkeeper/SecurityScreen';
+import HelpSupportScreen from '../screens/shopkeeper/HelpSupportScreen';
+import LegalDocumentScreen from '../screens/shopkeeper/LegalDocumentScreen';
 import { colors } from '../theme/colors';
 import type { RootStackParamList } from './types';
 
@@ -90,6 +93,21 @@ export default function RootNavigator() {
         <Stack.Screen
           name="Expenses"
           component={ExpensesScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Security"
+          component={SecurityScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="HelpSupport"
+          component={HelpSupportScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="LegalDocument"
+          component={LegalDocumentScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

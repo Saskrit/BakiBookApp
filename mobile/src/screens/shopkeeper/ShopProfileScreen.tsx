@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { updateProfile } from '../../api/auth';
 import ProfileImagePicker from '../../components/ProfileImagePicker';
+import EmailVerificationBanner from '../../components/EmailVerificationBanner';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, ErrorText, Input } from '../../components/ui';
 import { colors } from '../../theme/colors';
@@ -158,6 +159,7 @@ export default function ShopProfileScreen({ navigation }: Props) {
         </LinearGradient>
 
         <View style={styles.body}>
+          <EmailVerificationBanner user={user} />
           {message ? <Text style={styles.success}>{message}</Text> : null}
           {error ? <ErrorText message={error} /> : null}
 

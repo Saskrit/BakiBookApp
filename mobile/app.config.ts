@@ -1,7 +1,43 @@
 import type { ExpoConfig, ConfigContext } from 'expo/config';
 
-export default ({ config }: ConfigContext): ExpoConfig =>
-  ({
+function googleIosUrlScheme(webClientId: string): string | null {
+  const match = webClientId.match(/^([^.]+(?:\.[^.]+)*)\.apps\.googleusercontent\.com$/);
+  if (!match) return null;
+  return `com.googleusercontent.apps.${match[1]}`;
+}
+
+export default ({ config }: ConfigContext): ExpoConfig => {
+  const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '';
+  const iosUrlScheme = googleWebClientId ? googleIosUrlScheme(googleWebClientId) : null;
+
+  const plugins: ExpoConfig['plugins'] = [
+    './plugins/withBakiBookAndroid.js',
+    [
+      'expo-camera',
+      {
+        cameraPermission:
+          'Allow BakiBook to access your camera to scan customer QR codes and take photos.',
+      },
+    ],
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'Allow BakiBook to access your photos to update profile and shop images.',
+        cameraPermission:
+          'Allow BakiBook to use your camera to take profile and shop photos.',
+      },
+    ],
+  ];
+
+  if (iosUrlScheme) {
+    plugins.push([
+      '@react-native-google-signin/google-signin',
+      { iosUrlScheme },
+    ]);
+  }
+
+  return {
     ...config,
     name: 'BakiBook',
     slug: 'bakibook',
@@ -38,30 +74,14 @@ export default ({ config }: ConfigContext): ExpoConfig =>
   web: {
     favicon: './assets/favicon.png',
   },
-  plugins: [
-    './plugins/withBakiBookAndroid.js',
-    [
-      'expo-camera',
-      {
-        cameraPermission:
-          'Allow BakiBook to access your camera to scan customer QR codes and take photos.',
-      },
-    ],
-    [
-      'expo-image-picker',
-      {
-        photosPermission:
-          'Allow BakiBook to access your photos to update profile and shop images.',
-        cameraPermission:
-          'Allow BakiBook to use your camera to take profile and shop photos.',
-      },
-    ],
-  ],
+  plugins,
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL,
+    googleWebClientId: googleWebClientId || undefined,
     eas: {
       projectId: '2a61e05a-bb22-4d04-9f06-2d7a4bfc5871',
     },
   },
   owner: 'saskreet',
-  }) as ExpoConfig;
+  } as ExpoConfig;
+};

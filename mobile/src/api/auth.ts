@@ -54,12 +54,41 @@ export const register = (payload: {
     body: JSON.stringify(payload),
   });
 
+export const googleAuth = (payload: {
+  credential: string;
+  mode: 'login' | 'register';
+  role?: 'shopkeeper' | 'customer';
+  fullName?: string;
+  profileImage?: string;
+}) =>
+  request<AuthResponse>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
 export const fetchMe = () => request<{ success: boolean; user: User }>('/auth/me');
 
 export const updateProfile = (payload: Record<string, unknown>) =>
   request<{ success: boolean; message: string; user: User }>('/auth/profile', {
     method: 'PATCH',
     body: JSON.stringify(payload),
+  });
+
+export const changePassword = (payload: { currentPassword: string; newPassword: string }) =>
+  request<{ success: boolean; message: string }>('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const resendVerificationEmail = () =>
+  request<{ success: boolean; message: string }>('/auth/resend-verification', {
+    method: 'POST',
+  });
+
+export const forgotPassword = (email: string) =>
+  request<{ success: boolean; message: string }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
   });
 
 export const fetchPendingLinks = () =>

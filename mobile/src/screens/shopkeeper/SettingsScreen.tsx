@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useAuth } from '../../contexts/AuthContext';
+import EmailVerificationBanner from '../../components/EmailVerificationBanner';
 import { colors } from '../../theme/colors';
 import { typography as t } from '../../theme/typography';
 import { getInitials } from '../../utils/format';
@@ -190,7 +191,7 @@ export default function SettingsScreen() {
               <Path d="M12 3 L20 7 V12 C20 17 16.5 20.5 12 21 C7.5 20.5 4 17 4 12 V7 Z" stroke="#7C3AED" strokeWidth={2} />
             </Svg>
           ),
-          onPress: () => comingSoon('Security'),
+          onPress: () => navigation.getParent()?.navigate('Security'),
         },
         {
           label: 'Help & support',
@@ -201,7 +202,7 @@ export default function SettingsScreen() {
               <Path d="M10 10 C10 8 14 8 14 10 C14 12 12 12 12 14" stroke="#6B7280" strokeWidth={2} />
             </Svg>
           ),
-          onPress: () => comingSoon('Help & Support'),
+          onPress: () => navigation.getParent()?.navigate('HelpSupport'),
         },
       ],
     },
@@ -280,6 +281,23 @@ export default function SettingsScreen() {
                   {verified ? 'Verified shop' : 'Shop profile'}
                 </Text>
               </View>
+              {user?.authProvider !== 'google' ? (
+                <View
+                  style={[
+                    styles.badge,
+                    user?.isEmailVerified ? styles.badgeVerified : styles.badgeEmailPending,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.badgeText,
+                      user?.isEmailVerified ? styles.badgeTextVerified : styles.badgeTextEmailPending,
+                    ]}
+                  >
+                    {user?.isEmailVerified ? 'Email verified' : 'Email not verified'}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
 
@@ -292,6 +310,7 @@ export default function SettingsScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
+        <EmailVerificationBanner compact />
         {sections.map((section) => (
           <View key={section.title} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -394,7 +413,7 @@ const styles = StyleSheet.create({
   profileName: { fontSize: t.lg, fontWeight: '800', color: colors.text },
   profileShop: { fontSize: t.body, color: colors.primary, fontWeight: '600', marginTop: 2 },
   profileEmail: { fontSize: t.caption, color: colors.textMuted, marginTop: 3 },
-  badgeRow: { flexDirection: 'row', marginTop: 8 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -402,9 +421,11 @@ const styles = StyleSheet.create({
   },
   badgeVerified: { backgroundColor: '#DCFCE7' },
   badgePending: { backgroundColor: '#F3F4F6' },
+  badgeEmailPending: { backgroundColor: '#FEF3C7' },
   badgeText: { fontSize: t.sm, fontWeight: '700' },
   badgeTextVerified: { color: colors.primary },
   badgeTextPending: { color: colors.textMuted },
+  badgeTextEmailPending: { color: colors.warning },
   editHint: { fontSize: t.bodyLg, fontWeight: '700', color: colors.primary },
   scroll: { flex: 1, marginTop: -4 },
   content: { paddingHorizontal: 16, paddingTop: 16 },

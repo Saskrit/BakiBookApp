@@ -3,6 +3,7 @@ import {
   clearAuth,
   fetchMe,
   getStoredAuth,
+  googleAuth as apiGoogleAuth,
   login as apiLogin,
   register as apiRegister,
   saveAuth,
@@ -19,6 +20,11 @@ interface AuthContextValue {
     fullName: string;
     email: string;
     password: string;
+  }) => Promise<User>;
+  googleSignIn: (payload: {
+    credential: string;
+    mode: 'login' | 'register';
+    role?: 'shopkeeper' | 'customer';
   }) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -75,6 +81,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const googleSignIn = useCallback(
+    async (payload: {
+      credential: string;
+      mode: 'login' | 'register';
+      role?: 'shopkeeper' | 'customer';
+    }) => {
+      const data = await apiGoogleAuth(payload);
+      const nextUser = { ...data.user, pendingLinkCount: data.pendingLinkCount };
+      await saveAuth(data.token, nextUser, data.pendingLinkCount);
+      setUser(nextUser);
+      return nextUser;
+    },
+    []
+  );
+
   const logout = useCallback(async () => {
     await clearAuth();
     setUser(null);
@@ -87,8 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, refreshUser }),
-    [user, loading, login, register, logout, refreshUser]
+    () => ({ user, loading, login, register, googleSignIn, logout, refreshUser }),
+    [user, loading, login, register, googleSignIn, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

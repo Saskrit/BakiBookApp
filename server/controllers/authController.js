@@ -9,6 +9,7 @@ import {
   sendPasswordResetEmail,
 } from '../utils/emailService.js';
 import { verifyGoogleToken } from '../utils/googleVerify.js';
+import { assertEmailAvailableForRole } from '../utils/emailRoleGuard.js';
 import { resolveImageUrl } from '../utils/imageUpload.js';
 import { isAdminEmail, getAdminEmails, matchesAdminCredentials, getAdminEnvEmail, getAdminEnvPassword } from '../utils/adminCheck.js';
 import { notifyPendingInvitationsForUser } from './linkController.js';
@@ -163,17 +164,9 @@ export const registerUser = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Shopkeeper-added customers only exist in Customer records until the person signs up.
-    // Block signup only when this email is already registered for the same role.
-    const existingUser = await User.findOne({ email: normalizedEmail, role });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message:
-          role === 'customer'
-            ? 'Email address is already registered. Please login instead.'
-            : 'Email address is already registered',
-      });
+    const emailCheck = await assertEmailAvailableForRole(normalizedEmail, role);
+    if (!emailCheck.ok) {
+      return res.status(emailCheck.status).json({ success: false, message: emailCheck.message });
     }
 
     const rawVerificationToken = createEmailToken();
@@ -611,6 +604,11 @@ export const googleAuth = async (req, res) => {
       );
     }
 
+    const emailCheck = await assertEmailAvailableForRole(googleUser.email, role);
+    if (!emailCheck.ok) {
+      return res.status(emailCheck.status).json({ success: false, message: emailCheck.message });
+    }
+
     const resolvedProfileImage = await resolveImageUrl(
       profileImage || googleUser.picture,
       'profiles'
@@ -655,7 +653,8 @@ export const googleAuth = async (req, res) => {
 
         return res.status(409).json({
           success: false,
-          message: 'An account with this email already exists under a different role. Use Login and pick the correct role.',
+          message:
+            'This email is already registered under a different account type. Use Login with the correct account type.',
         });
       }
       throw createError;
@@ -800,6 +799,54 @@ export const updateProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message || 'Failed to update profile',
+    });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters',
+      });
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: 'This account uses Google sign-in. Set a password via email reset on the web app.',
+      });
+    }
+
+    const matches = await user.matchPassword(currentPassword);
+    if (!matches) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to change password',
     });
   }
 };

@@ -10,6 +10,7 @@ import {
   resendVerificationEmail,
   forgotPassword,
   resetPassword,
+  changePassword,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -24,6 +25,7 @@ router.patch('/shop-profile', protect, completeShopProfile);
 router.patch('/profile', protect, updateProfile);
 router.get('/verify-email/:token', verifyEmail);
 router.post('/resend-verification', protect, resendVerificationEmail);
+router.post('/change-password', protect, changePassword);
 router.get('/me', protect, getMe);
 
 export default router;

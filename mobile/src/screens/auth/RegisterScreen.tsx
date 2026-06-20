@@ -21,9 +21,11 @@ import {
   EmailIcon,
   EyeIcon,
   LockIcon,
+  OrDivider,
   UserIcon,
   authStyles,
 } from '../../components/auth/AuthUi';
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
 import { colors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -44,7 +46,7 @@ function BackIcon() {
 }
 
 export default function RegisterScreen({ navigation }: Props) {
-  const { register } = useAuth();
+  const { register, googleSignIn } = useAuth();
   const insets = useSafeAreaInsets();
   const [role, setRole] = useState<'shopkeeper' | 'customer'>('shopkeeper');
   const [fullName, setFullName] = useState('');
@@ -88,6 +90,19 @@ export default function RegisterScreen({ navigation }: Props) {
     }
   };
 
+  const handleGoogleCredential = async (credential: string) => {
+    setError('');
+    setLoading(true);
+    try {
+      const user = await googleSignIn({ credential, mode: 'register', role });
+      navigation.replace(user.role === 'shopkeeper' ? 'Shopkeeper' : 'Customer');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-up failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={authStyles.container}>
       <StatusBar style="dark" />
@@ -118,6 +133,9 @@ export default function RegisterScreen({ navigation }: Props) {
           <View style={authStyles.card}>
             <Text style={authStyles.cardTitle}>Create Account!</Text>
             <Text style={authStyles.cardSubtitle}>Register to start managing your credit</Text>
+            <Text style={styles.roleHint}>
+              One email can only be used for one account type — shopkeeper or customer, not both.
+            </Text>
 
             {error ? <Text style={authStyles.error}>{error}</Text> : null}
 
@@ -209,6 +227,14 @@ export default function RegisterScreen({ navigation }: Props) {
               )}
             </Pressable>
 
+            <OrDivider />
+
+            <GoogleSignInButton
+              disabled={loading}
+              onCredential={handleGoogleCredential}
+              onError={setError}
+            />
+
             <View style={authStyles.altRow}>
               <Text style={authStyles.altText}>Already have an account? </Text>
               <Pressable onPress={() => navigation.goBack()}>
@@ -225,6 +251,13 @@ export default function RegisterScreen({ navigation }: Props) {
 }
 
 const styles = {
+  roleHint: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 18,
+    marginBottom: 14,
+    marginTop: -4,
+  },
   roleRow: {
     flexDirection: 'row' as const,
     gap: 10,
