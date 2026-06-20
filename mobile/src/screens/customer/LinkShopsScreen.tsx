@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text } from 'react-native';
+import { FlatList, StyleSheet, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { acceptShopLink, fetchPendingLinks, rejectShopLink } from '../../api/portal';
+import { appAlert } from '../../contexts/DialogContext';
 import { Button, Card, LoadingState, Subtitle, Title } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
@@ -29,7 +30,7 @@ export default function LinkShopsScreen({ navigation }: Props) {
 
   const handleAccept = async (customerId: string) => {
     await acceptShopLink(customerId);
-    Alert.alert('Linked', 'Shop linked successfully');
+    appAlert('Linked', 'Shop linked successfully');
     await load();
     if (links.length <= 1) navigation.goBack();
   };

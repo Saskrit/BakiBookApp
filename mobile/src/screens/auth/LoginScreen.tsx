@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { appAlert } from '../../contexts/DialogContext';
 import LoginBackground from '../../components/auth/LoginBackground';
 import {
   AuthFooter,
@@ -62,7 +62,7 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   const handleForgotPassword = () => {
-    Alert.alert(
+    appAlert(
       'Forgot Password?',
       'Password reset is available on the BakiBook web portal. Enter your registered email there to receive a reset link.',
     );

@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { deleteCustomer } from '../../api/customers';
 import { fetchSharedAccount, type LedgerEntry } from '../../api/shared';
 import { useAuth } from '../../contexts/AuthContext';
+import { appAlert } from '../../contexts/DialogContext';
 import { Button, LoadingState } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import { typography as t } from '../../theme/typography';
@@ -97,14 +97,14 @@ export default function CustomerProfileScreen({ route }: Props) {
     useCallback(() => {
       setLoading(true);
       load()
-        .catch(() => Alert.alert('Error', 'Failed to load customer profile'))
+        .catch(() => appAlert('Error', 'Failed to load customer profile'))
         .finally(() => setLoading(false));
     }, [load])
   );
 
   const handleDelete = () => {
     if (!customer) return;
-    Alert.alert(
+    appAlert(
       'Delete customer',
       `Remove ${customer.name} and all related records? This cannot be undone.`,
       [
@@ -117,7 +117,7 @@ export default function CustomerProfileScreen({ route }: Props) {
               await deleteCustomer(customerId);
               navigation.goBack();
             } catch (err) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete');
+              appAlert('Error', err instanceof Error ? err.message : 'Failed to delete');
             }
           },
         },
@@ -147,7 +147,7 @@ export default function CustomerProfileScreen({ route }: Props) {
         payments,
       });
     } catch (err) {
-      Alert.alert('Export failed', err instanceof Error ? err.message : 'Could not export PDF');
+      appAlert('Export failed', err instanceof Error ? err.message : 'Could not export PDF');
     } finally {
       setExporting(false);
     }

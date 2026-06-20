@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { resendVerificationEmail } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
+import { appAlert } from '../contexts/DialogContext';
 import { colors } from '../theme/colors';
 import type { User } from '../types';
 
@@ -26,10 +27,10 @@ export default function EmailVerificationBanner({ user: userProp, compact }: Pro
     try {
       const data = await resendVerificationEmail();
       setSent(true);
-      Alert.alert('Verification email sent', data.message || 'Check your inbox for the verification link.');
+      appAlert('Verification email sent', data.message || 'Check your inbox for the verification link.');
       await refreshUser();
     } catch (err) {
-      Alert.alert(
+      appAlert(
         'Could not send email',
         err instanceof Error ? err.message : 'Please try again in a few minutes.',
       );

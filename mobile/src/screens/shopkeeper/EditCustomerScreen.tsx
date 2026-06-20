@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { fetchCustomer, updateCustomer } from '../../api/customers';
+import { appAlert } from '../../contexts/DialogContext';
 import { Button, ErrorText, Input, LoadingState, Screen, Subtitle, Title } from '../../components/ui';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -46,7 +47,7 @@ export default function EditCustomerScreen({ route, navigation }: Props) {
         address: address.trim() || undefined,
         notes: notes.trim() || undefined,
       });
-      Alert.alert('Saved', 'Customer updated successfully');
+      appAlert('Saved', 'Customer updated successfully');
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');

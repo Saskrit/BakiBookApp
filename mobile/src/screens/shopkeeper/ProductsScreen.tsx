@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -13,6 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { appAlert } from '../../contexts/DialogContext';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import {
   createProduct,
@@ -143,7 +143,7 @@ export default function ProductsScreen() {
   };
 
   const handleDelete = (product: ShopProduct) => {
-    Alert.alert('Delete product', `Remove "${product.name}" from catalog?`, [
+    appAlert('Delete product', `Remove "${product.name}" from catalog?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -153,7 +153,7 @@ export default function ProductsScreen() {
             await deleteProduct(product.id);
             await load();
           } catch (err) {
-            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete');
+            appAlert('Error', err instanceof Error ? err.message : 'Failed to delete');
           }
         },
       },

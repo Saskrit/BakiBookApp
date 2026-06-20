@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useAuth } from '../../contexts/AuthContext';
+import { appAlert } from '../../contexts/DialogContext';
 import EmailVerificationBanner from '../../components/EmailVerificationBanner';
 import { colors } from '../../theme/colors';
 import { typography as t } from '../../theme/typography';
@@ -33,7 +34,7 @@ type MenuSection = {
 };
 
 function comingSoon(label: string) {
-  Alert.alert('Coming soon', `${label} will be available in a future update.`);
+  appAlert('Coming soon', `${label} will be available in a future update.`);
 }
 
 function RowIcon({ children, bg }: { children: ReactNode; bg: string }) {
@@ -64,7 +65,7 @@ export default function SettingsScreen() {
   const openShopProfile = () => navigation.getParent()?.navigate('ShopProfile');
 
   const handleLogout = () => {
-    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+    appAlert('Sign out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: () => logout() },
     ]);

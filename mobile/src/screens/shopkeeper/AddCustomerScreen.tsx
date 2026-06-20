@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { createCustomer } from '../../api/customers';
+import { appAlert } from '../../contexts/DialogContext';
 import { Button, ErrorText, Input, Screen, Subtitle, Title } from '../../components/ui';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -24,7 +25,7 @@ export default function AddCustomerScreen({ navigation }: Props) {
     setError('');
     try {
       await createCustomer({ name: name.trim(), phone, email, address });
-      Alert.alert('Saved', 'Customer added successfully');
+      appAlert('Saved', 'Customer added successfully');
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');

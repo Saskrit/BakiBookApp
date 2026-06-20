@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Pressable,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadImage, type UploadType } from '../api/upload';
+import { appAlert } from '../contexts/DialogContext';
 import { colors } from '../theme/colors';
 import { getInitials } from '../utils/format';
 
@@ -92,7 +92,7 @@ export default function ProfileImagePicker({
   const chooseSource = () => {
     if (disabled || uploading) return;
 
-    Alert.alert(label, 'Choose a photo source', [
+    appAlert(label, 'Choose a photo source', [
       {
         text: 'Photo Library',
         onPress: async () => {

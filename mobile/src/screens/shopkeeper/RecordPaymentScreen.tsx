@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { createPayment } from '../../api/transactions';
+import { appAlert } from '../../contexts/DialogContext';
 import { Button, ErrorText, Input, Screen, Subtitle, Title } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
@@ -32,7 +33,7 @@ export default function RecordPaymentScreen({ route, navigation }: Props) {
         method,
         note: note.trim() || undefined,
       });
-      Alert.alert('Saved', 'Payment recorded successfully');
+      appAlert('Saved', 'Payment recorded successfully');
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');

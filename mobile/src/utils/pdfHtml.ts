@@ -1,6 +1,6 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { Alert } from 'react-native';
+import { appAlert } from '../contexts/DialogContext';
 import { formatRs } from './format';
 
 export function escapeHtml(text: unknown) {
@@ -73,7 +73,7 @@ export async function shareHtmlAsPdf(html: string, dialogTitle = 'Export PDF') {
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(file.uri, { dialogTitle, mimeType: 'application/pdf' });
   } else {
-    Alert.alert('PDF saved', file.uri);
+    appAlert('PDF saved', file.uri);
   }
 }
 

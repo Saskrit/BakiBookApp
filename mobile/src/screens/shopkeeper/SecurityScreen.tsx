@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,6 +20,7 @@ import {
   resendVerificationEmail,
 } from '../../api/auth';
 import { useAuth } from '../../contexts/AuthContext';
+import { appAlert } from '../../contexts/DialogContext';
 import { Button, ErrorText } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import { typography as t } from '../../theme/typography';
@@ -131,7 +131,7 @@ export default function SecurityScreen() {
 
   const handleForgotPassword = () => {
     if (!user?.email) return;
-    Alert.alert(
+    appAlert(
       'Send reset email',
       `Send a password reset link to ${user.email}?`,
       [
@@ -143,9 +143,9 @@ export default function SecurityScreen() {
             setError('');
             try {
               const res = await forgotPassword(user.email);
-              Alert.alert('Email sent', res.message);
+              appAlert('Email sent', res.message);
             } catch (err) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to send email');
+              appAlert('Error', err instanceof Error ? err.message : 'Failed to send email');
             } finally {
               setSendingReset(false);
             }
@@ -160,17 +160,17 @@ export default function SecurityScreen() {
     setError('');
     try {
       const res = await resendVerificationEmail();
-      Alert.alert('Verification email', res.message);
+      appAlert('Verification email', res.message);
       await refreshUser();
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to resend email');
+      appAlert('Error', err instanceof Error ? err.message : 'Failed to resend email');
     } finally {
       setResendingVerify(false);
     }
   };
 
   const handleSignOut = () => {
-    Alert.alert('Sign out', 'Sign out of BakiBook on this device?', [
+    appAlert('Sign out', 'Sign out of BakiBook on this device?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign out',

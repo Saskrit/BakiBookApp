@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { appAlert } from '../../contexts/DialogContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { createCustomer, fetchCustomers } from '../../api/customers';
@@ -369,7 +369,7 @@ export default function AddCreditScreen({ route, navigation }: Props) {
         items,
         note: note.trim() || undefined,
       });
-      Alert.alert('Saved', `Credit of ${formatRs(total)} recorded successfully`);
+      appAlert('Saved', `Credit of ${formatRs(total)} recorded successfully`);
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save credit');

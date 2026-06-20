@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Modal,
@@ -17,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { appAlert } from '../../contexts/DialogContext';
 import {
   createExpense,
   deleteExpense,
@@ -179,7 +179,7 @@ export default function ExpensesScreen() {
   };
 
   const handleDelete = (expense: ShopExpense) => {
-    Alert.alert('Delete expense', `Remove "${expense.title}"?`, [
+    appAlert('Delete expense', `Remove "${expense.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -189,7 +189,7 @@ export default function ExpensesScreen() {
             await deleteExpense(expense.id);
             await load();
           } catch (err) {
-            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete');
+            appAlert('Error', err instanceof Error ? err.message : 'Failed to delete');
           }
         },
       },

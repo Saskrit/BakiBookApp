@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { fetchCompleteReport } from '../../api/shop';
 import { useAuth } from '../../contexts/AuthContext';
+import { appAlert } from '../../contexts/DialogContext';
 import { Button, ErrorText, LoadingState } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import { typography as t } from '../../theme/typography';
@@ -327,7 +327,7 @@ export default function ReportsScreen() {
 
   const exportPdf = async () => {
     if (!data) {
-      Alert.alert('No report', 'Generate a report first, then export.');
+      appAlert('No report', 'Generate a report first, then export.');
       return;
     }
     setExporting(true);
@@ -339,7 +339,7 @@ export default function ReportsScreen() {
         ...data,
       });
     } catch (err) {
-      Alert.alert('Export failed', err instanceof Error ? err.message : 'Could not export PDF');
+      appAlert('Export failed', err instanceof Error ? err.message : 'Could not export PDF');
     } finally {
       setExporting(false);
     }

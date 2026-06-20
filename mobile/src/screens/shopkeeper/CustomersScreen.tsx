@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -13,6 +12,7 @@ import {
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { appAlert } from '../../contexts/DialogContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { fetchCustomers, deleteCustomer } from '../../api/customers';
@@ -234,7 +234,7 @@ export default function CustomersScreen() {
   }, [customers, tab, sort, overdueOnly]);
 
   const openSort = () => {
-    Alert.alert('Sort By', undefined, [
+    appAlert('Sort By', undefined, [
       ...(Object.keys(SORT_LABELS) as SortKey[]).map((key) => ({
         text: SORT_LABELS[key],
         onPress: () => setSort(key),
@@ -248,14 +248,14 @@ export default function CustomersScreen() {
   };
 
   const openCustomerActions = (customer: Customer) => {
-    Alert.alert(customer.name, 'Choose an action', [
+    appAlert(customer.name, 'Choose an action', [
       { text: 'View profile', onPress: () => openCustomer(customer) },
       { text: 'Edit', onPress: () => navigation.navigate('EditCustomer', { customerId: customer.id }) },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          Alert.alert('Delete customer', `Remove ${customer.name}?`, [
+          appAlert('Delete customer', `Remove ${customer.name}?`, [
             { text: 'Cancel', style: 'cancel' },
             {
               text: 'Delete',
@@ -265,7 +265,7 @@ export default function CustomersScreen() {
                   await deleteCustomer(customer.id);
                   await load();
                 } catch (err) {
-                  Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete');
+                  appAlert('Error', err instanceof Error ? err.message : 'Failed to delete');
                 }
               },
             },
