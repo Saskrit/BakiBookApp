@@ -13,6 +13,7 @@ import Expense from './models/Expense.js';
 import { initSocket } from './config/socket.js';
 import authRoutes from './routes/authRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import geocodeRoutes from './routes/geocodeRoutes.js';
 import legalRoutes from './routes/legalRoutes.js';
 import customerRoutes from './routes/customerRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
