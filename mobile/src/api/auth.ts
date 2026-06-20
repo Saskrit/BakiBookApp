@@ -57,7 +57,7 @@ export const register = (payload: {
 export const fetchMe = () => request<{ success: boolean; user: User }>('/auth/me');
 
 export const updateProfile = (payload: Record<string, unknown>) =>
-  request('/auth/profile', {
+  request<{ success: boolean; message: string; user: User }>('/auth/profile', {
     method: 'PATCH',
     body: JSON.stringify(payload),
   });

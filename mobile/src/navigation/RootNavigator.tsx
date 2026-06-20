@@ -11,6 +11,11 @@ import CustomerProfileScreen from '../screens/shopkeeper/CustomerProfileScreen';
 import AddCreditScreen from '../screens/shopkeeper/AddCreditScreen';
 import RecordPaymentScreen from '../screens/shopkeeper/RecordPaymentScreen';
 import LinkShopsScreen from '../screens/customer/LinkShopsScreen';
+import EditCustomerScreen from '../screens/shopkeeper/EditCustomerScreen';
+import FilteredCustomersScreen from '../screens/shopkeeper/FilteredCustomersScreen';
+import ShopProfileScreen from '../screens/shopkeeper/ShopProfileScreen';
+import ProductsScreen from '../screens/shopkeeper/ProductsScreen';
+import ExpensesScreen from '../screens/shopkeeper/ExpensesScreen';
 import { colors } from '../theme/colors';
 import type { RootStackParamList } from './types';
 
@@ -38,7 +43,7 @@ export default function RootNavigator() {
       >
         <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Register' }} />
+        <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
         <Stack.Screen
           name="Shopkeeper"
           component={ShopkeeperNavigator}
@@ -53,15 +58,40 @@ export default function RootNavigator() {
         <Stack.Screen
           name="CustomerProfile"
           component={CustomerProfileScreen}
-          options={{ title: 'Customer Profile' }}
+          options={{ headerShown: false }}
         />
-        <Stack.Screen name="AddCredit" component={AddCreditScreen} options={{ title: 'Add Credit' }} />
+        <Stack.Screen name="EditCustomer" component={EditCustomerScreen} options={{ title: 'Edit Customer' }} />
+        <Stack.Screen
+          name="FilteredCustomers"
+          component={FilteredCustomersScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddCredit"
+          component={AddCreditScreen}
+          options={{ headerShown: false, title: 'Add Credit' }}
+        />
         <Stack.Screen
           name="RecordPayment"
           component={RecordPaymentScreen}
           options={{ title: 'Record Payment' }}
         />
         <Stack.Screen name="LinkShops" component={LinkShopsScreen} options={{ title: 'Link Shops' }} />
+        <Stack.Screen
+          name="ShopProfile"
+          component={ShopProfileScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Products"
+          component={ProductsScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Expenses"
+          component={ExpensesScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

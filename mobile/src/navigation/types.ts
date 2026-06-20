@@ -6,9 +6,18 @@ export type RootStackParamList = {
   Customer: undefined;
   AddCustomer: undefined;
   CustomerProfile: { customerId: string };
-  AddCredit: { customerId: string; customerName?: string };
+  EditCustomer: { customerId: string };
+  FilteredCustomers: {
+    mode: 'collect' | 'overdue';
+    title: string;
+    subtitle: string;
+  };
+  AddCredit: { customerId?: string; customerName?: string } | undefined;
   RecordPayment: { customerId: string; customerName?: string };
   LinkShops: undefined;
+  ShopProfile: undefined;
+  Products: undefined;
+  Expenses: undefined;
 };
 
 export type ShopkeeperTabParamList = {

@@ -11,6 +11,7 @@
     "expo-camera": "~56.0.8",
     "expo-clipboard": "~56.0.4",
     "expo-constants": "~56.0.18",
+    "expo-image-picker": "~56.0.18",
     "expo-linear-gradient": "~56.0.4",
     "expo-print": "~56.0.4",
     "expo-sharing": "~56.0.18",
@@ -28,10 +29,13 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "postinstall": "node ./scripts/patch-gradle.js",
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "powershell -ExecutionPolicy Bypass -File ./scripts/run-android.ps1",
+    "android:expo-go": "expo start --android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
+    "prebuild:android": "expo prebuild --platform android --clean",
     "build:android": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 production",
     "build:android:preview": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 preview",
     "submit:android": "npx eas-cli submit --platform android --profile production --latest"

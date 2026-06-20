@@ -10,7 +10,7 @@ export default ({ config }: ConfigContext): ExpoConfig =>
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     splash: {
-      image: './assets/splash-icon.png',
+      image: './assets/icon.png',
       resizeMode: 'contain',
       backgroundColor: '#4C5C2D',
     },
@@ -19,16 +19,17 @@ export default ({ config }: ConfigContext): ExpoConfig =>
     bundleIdentifier: 'com.bakibook.app',
     infoPlist: {
       NSCameraUsageDescription:
-        'BakiBook uses the camera to scan customer QR codes.',
+        'BakiBook uses the camera to scan customer QR codes and update profile photos.',
+      NSPhotoLibraryUsageDescription:
+        'BakiBook uses your photo library to update your profile and shop photos.',
     },
   },
   android: {
     package: 'com.bakibook.app',
-    versionCode: 1,
+    versionCode: 6,
     adaptiveIcon: {
       backgroundColor: '#4C5C2D',
-      foregroundImage: './assets/android-icon-foreground.png',
-      backgroundImage: './assets/android-icon-background.png',
+      foregroundImage: './assets/icon.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },
     permissions: ['CAMERA'],
@@ -38,11 +39,21 @@ export default ({ config }: ConfigContext): ExpoConfig =>
     favicon: './assets/favicon.png',
   },
   plugins: [
+    './plugins/withBakiBookAndroid.js',
     [
       'expo-camera',
       {
         cameraPermission:
-          'Allow BakiBook to access your camera to scan customer QR codes.',
+          'Allow BakiBook to access your camera to scan customer QR codes and take photos.',
+      },
+    ],
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'Allow BakiBook to access your photos to update profile and shop images.',
+        cameraPermission:
+          'Allow BakiBook to use your camera to take profile and shop photos.',
       },
     ],
   ],

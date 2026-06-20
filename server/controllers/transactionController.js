@@ -3,6 +3,7 @@ import Customer from '../models/Customer.js';
 import { applyCredit, recalculateBalance } from '../utils/customerBalance.js';
 import { formatTransaction } from '../utils/formatters.js';
 import { createNotification } from '../utils/notify.js';
+import { upsertProductsFromItems } from '../utils/productCatalog.js';
 
 const getShopkeeperId = (req) => req.user._id;
 
@@ -90,6 +91,7 @@ export const createTransaction = async (req, res) => {
     });
 
     await applyCredit(customerId, total);
+    await upsertProductsFromItems(getShopkeeperId(req), normalizedItems);
 
     await createNotification({
       userId: getShopkeeperId(req),
@@ -146,6 +148,9 @@ export const updateTransaction = async (req, res) => {
 
     await tx.save();
     await recalculateBalance(tx.customer);
+    if (tx.items?.length) {
+      await upsertProductsFromItems(getShopkeeperId(req), tx.items);
+    }
 
     const customerName = await getCustomerName(tx.customer);
     res.json({ success: true, transaction: formatTransaction(tx, customerName) });

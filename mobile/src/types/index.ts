@@ -30,6 +30,8 @@ export interface Customer {
   qrCode?: string;
   notes?: string;
   avatar?: string;
+  lastCreditDate?: string;
+  lastPaymentDate?: string;
 }
 
 export interface LineItem {
@@ -37,6 +39,35 @@ export interface LineItem {
   qty: number;
   price: number;
 }
+
+export interface ShopProduct {
+  id: string;
+  name: string;
+  lastPrice: number;
+  usageCount: number;
+  lastUsedAt?: string;
+}
+
+export interface ShopExpense {
+  id: string;
+  title: string;
+  amount: number;
+  category: string;
+  note?: string;
+  expenseDate?: string;
+  createdAt?: string;
+}
+
+export const EXPENSE_CATEGORIES = [
+  'Stock',
+  'Rent',
+  'Utilities',
+  'Transport',
+  'Salary',
+  'Marketing',
+  'Maintenance',
+  'Other',
+] as const;
 
 export interface Transaction {
   id: string;

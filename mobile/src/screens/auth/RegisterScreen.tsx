@@ -1,37 +1,83 @@
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, ErrorText, Input, Screen, Subtitle, Title } from '../../components/ui';
+import LoginBackground from '../../components/auth/LoginBackground';
+import {
+  AuthFooter,
+  AuthHeader,
+  EmailIcon,
+  EyeIcon,
+  LockIcon,
+  UserIcon,
+  authStyles,
+} from '../../components/auth/AuthUi';
+import { colors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
+function BackIcon() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M15 6 L9 12 L15 18"
+        stroke={colors.primary}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export default function RegisterScreen({ navigation }: Props) {
   const { register } = useAuth();
+  const insets = useSafeAreaInsets();
   const [role, setRole] = useState<'shopkeeper' | 'customer'>('shopkeeper');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) {
+      setError('Please enter your full name');
+      return;
+    }
+    if (!trimmedEmail) {
+      setError('Please enter your email address');
+      return;
+    }
+    if (!password) {
+      setError('Please enter a password');
+      return;
+    }
+
     setError('');
     setLoading(true);
     try {
       const user = await register({
         role,
-        fullName: fullName.trim(),
-        email: email.trim(),
+        fullName: trimmedName,
+        email: trimmedEmail,
         password,
       });
       navigation.replace(user.role === 'shopkeeper' ? 'Shopkeeper' : 'Customer');
@@ -43,69 +89,166 @@ export default function RegisterScreen({ navigation }: Props) {
   };
 
   return (
-    <Screen>
+    <View style={authStyles.container}>
+      <StatusBar style="dark" />
+      <LoginBackground />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
+        style={authStyles.flex}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Title>Create account</Title>
-          <Subtitle>One app for shopkeepers and customers</Subtitle>
-          {error ? <ErrorText message={error} /> : null}
+        <ScrollView
+          contentContainerStyle={[
+            authStyles.scroll,
+            { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={authStyles.backBtn}
+            accessibilityLabel="Go back to login"
+          >
+            <BackIcon />
+          </Pressable>
 
-          <View style={styles.roleRow}>
-            {(['shopkeeper', 'customer'] as const).map((r) => (
+          <AuthHeader />
+
+          <View style={authStyles.card}>
+            <Text style={authStyles.cardTitle}>Create Account!</Text>
+            <Text style={authStyles.cardSubtitle}>Register to start managing your credit</Text>
+
+            {error ? <Text style={authStyles.error}>{error}</Text> : null}
+
+            <Text style={authStyles.label}>I am a</Text>
+            <View style={styles.roleRow}>
+              {(['shopkeeper', 'customer'] as const).map((r) => (
+                <Pressable
+                  key={r}
+                  onPress={() => setRole(r)}
+                  style={[styles.roleBtn, role === r && styles.roleBtnActive]}
+                >
+                  <Text style={[styles.roleText, role === r && styles.roleTextActive]}>
+                    {r === 'shopkeeper' ? 'Shopkeeper' : 'Customer'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={authStyles.label}>Full Name</Text>
+            <View style={authStyles.inputRow}>
+              <UserIcon />
+              <TextInput
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Enter your full name"
+                placeholderTextColor={colors.textMuted}
+                style={authStyles.input}
+                autoCapitalize="words"
+                textContentType="name"
+                autoComplete="name"
+              />
+            </View>
+
+            <Text style={authStyles.label}>Email Address</Text>
+            <View style={authStyles.inputRow}>
+              <EmailIcon />
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email address"
+                placeholderTextColor={colors.textMuted}
+                style={authStyles.input}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                autoComplete="email"
+              />
+            </View>
+
+            <Text style={authStyles.label}>Password</Text>
+            <View style={authStyles.inputRow}>
+              <LockIcon />
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Create a password"
+                placeholderTextColor={colors.textMuted}
+                style={authStyles.input}
+                secureTextEntry={!showPassword}
+                textContentType="newPassword"
+                autoComplete="password-new"
+              />
               <Pressable
-                key={r}
-                onPress={() => setRole(r)}
-                style={[styles.roleBtn, role === r && styles.roleBtnActive]}
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={8}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
-                <Text style={[styles.roleText, role === r && styles.roleTextActive]}>
-                  {r === 'shopkeeper' ? 'Shopkeeper' : 'Customer'}
-                </Text>
+                <EyeIcon visible={showPassword} />
               </Pressable>
-            ))}
+            </View>
+
+            <Pressable
+              onPress={handleRegister}
+              disabled={loading}
+              style={({ pressed }) => [
+                authStyles.primaryBtn,
+                loading && authStyles.primaryBtnDisabled,
+                pressed && authStyles.primaryBtnPressed,
+              ]}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={authStyles.primaryBtnText}>Register</Text>
+                  <Text style={authStyles.primaryBtnArrow}>→</Text>
+                </>
+              )}
+            </Pressable>
+
+            <View style={authStyles.altRow}>
+              <Text style={authStyles.altText}>Already have an account? </Text>
+              <Pressable onPress={() => navigation.goBack()}>
+                <Text style={authStyles.altLink}>Login Now</Text>
+              </Pressable>
+            </View>
           </View>
 
-          <Input label="Full name" value={fullName} onChangeText={setFullName} />
-          <Input
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <Input
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <Button title="Register" onPress={handleRegister} loading={loading} />
-          <Pressable onPress={() => navigation.goBack()} style={styles.linkWrap}>
-            <Text style={styles.link}>Already have an account? Sign in</Text>
-          </Pressable>
+          <AuthFooter />
         </ScrollView>
       </KeyboardAvoidingView>
-    </Screen>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  content: { paddingTop: 24, paddingBottom: 24 },
-  roleRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+const styles = {
+  roleRow: {
+    flexDirection: 'row' as const,
+    gap: 10,
+    marginBottom: 16,
+  },
   roleBtn: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E8E0E0',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    backgroundColor: '#FAFAFA',
   },
-  roleBtnActive: { backgroundColor: '#6A7E3F', borderColor: '#6A7E3F' },
-  roleText: { fontWeight: '600', color: '#4C5C2D' },
-  roleTextActive: { color: '#fff' },
-  linkWrap: { marginTop: 20, alignItems: 'center' },
-  link: { color: '#6A7E3F', fontWeight: '600' },
-});
+  roleBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  roleText: {
+    fontWeight: '600' as const,
+    fontSize: 14,
+    color: colors.primaryDark,
+  },
+  roleTextActive: {
+    color: '#FFFFFF',
+  },
+};

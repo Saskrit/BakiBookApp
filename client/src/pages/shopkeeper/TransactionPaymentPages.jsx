@@ -9,6 +9,7 @@ import { fetchCustomers } from '../../services/customers';
 import { fetchTransaction, createTransaction, updateTransaction } from '../../services/transactions';
 import { fetchPayment, createPayment } from '../../services/payments';
 import { fetchShopActivity } from '../../services/shop';
+import ProductSearchInput from '../../components/ProductSearchInput';
 import { formatRs } from '../../utils/format';
 import { PAGE_SIZE } from '../../constants/pagination';
 import '../../components/app/AppPages.css';
@@ -69,7 +70,21 @@ export function AddCreditPage() {
             </select>
           </div>
           <div className="app-grid-3">
-            <div className="app-field"><label>Item Name</label><input value={form.itemName} onChange={(e) => setForm((f) => ({ ...f, itemName: e.target.value }))} placeholder="Product name" required /></div>
+            <div className="app-field">
+              <label>Item Name</label>
+              <ProductSearchInput
+                value={form.itemName}
+                onChange={(itemName) => setForm((f) => ({ ...f, itemName }))}
+                onSelectProduct={(product) =>
+                  setForm((f) => ({
+                    ...f,
+                    itemName: product.name,
+                    price: product.lastPrice ?? f.price,
+                  }))
+                }
+                required
+              />
+            </div>
             <div className="app-field"><label>Quantity</label><input type="number" min="1" value={form.qty} onChange={(e) => setForm((f) => ({ ...f, qty: e.target.value }))} required /></div>
             <div className="app-field"><label>Unit Price (Rs.)</label><input type="number" min="0" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} required /></div>
           </div>

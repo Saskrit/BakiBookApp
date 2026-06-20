@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import User from './models/User.js';
 import Customer from './models/Customer.js';
+import Product from './models/Product.js';
+import Expense from './models/Expense.js';
 import { initSocket } from './config/socket.js';
 import authRoutes from './routes/authRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
@@ -22,7 +24,7 @@ import portalRoutes from './routes/portalRoutes.js';
 import linkRoutes from './routes/linkRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import sharedRoutes from './routes/sharedRoutes.js';
-import geocodeRoutes from './routes/geocodeRoutes.js';
+import expenseRoutes from './routes/expenseRoutes.js';
 import paymentSubmissionRoutes from './routes/paymentSubmissionRoutes.js';
 import paymentVisibilityRoutes from './routes/paymentVisibilityRoutes.js';
 import { seedLegalDocuments } from './utils/seedLegal.js';
@@ -40,6 +42,8 @@ connectDB().then(async () => {
   try {
     await User.syncIndexes();
     await Customer.syncIndexes();
+    await Product.syncIndexes();
+    await Expense.syncIndexes();
   } catch (err) {
     console.warn('Index sync failed:', err.message);
   }
@@ -77,6 +81,7 @@ app.use('/api/payment-submissions', paymentSubmissionRoutes);
 app.use('/api/paid-entries', paymentVisibilityRoutes);
 app.use('/api/ledger', ledgerRoutes);
 app.use('/api/shop', shopRoutes);
+app.use('/api/expenses', expenseRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/portal', portalRoutes);
 app.use('/api/links', linkRoutes);

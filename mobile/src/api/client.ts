@@ -55,7 +55,11 @@ export async function request<T = unknown>(
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error((data as { message?: string }).message || 'Something went wrong');
+    const message = (data as { message?: string }).message;
+    if (response.status === 404) {
+      throw new Error(message || 'This feature is not available on the server yet. Please update the backend.');
+    }
+    throw new Error(message || 'Something went wrong');
   }
 
   return data as T;

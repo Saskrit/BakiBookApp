@@ -19,7 +19,18 @@ export const fetchCustomerByQr = (qrCode: string) =>
   request<{ success: boolean; customer: Customer }>(`/customers/qr/${qrCode}`);
 
 export const createCustomer = (payload: Partial<Customer>) =>
-  request('/customers', { method: 'POST', body: JSON.stringify(payload) });
+  request<{ success: boolean; customer: Customer }>('/customers', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 
 export const updateCustomer = (id: string, payload: Partial<Customer>) =>
-  request(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  request<{ success: boolean; customer: Customer }>(`/customers/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+export const deleteCustomer = (id: string) =>
+  request<{ success: boolean; message?: string }>(`/customers/${id}`, {
+    method: 'DELETE',
+  });

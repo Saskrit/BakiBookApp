@@ -9,6 +9,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { colors } from '../theme/colors';
+import { typography as t } from '../theme/typography';
 
 export function Screen({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   return <View style={[styles.screen, style]}>{children}</View>;
@@ -132,19 +133,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 24,
+    fontSize: t.h1,
     fontWeight: '700',
     color: colors.primaryDark,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: t.bodyLg,
     color: colors.textMuted,
     marginBottom: 16,
   },
   inputWrap: { marginBottom: 14 },
   label: {
-    fontSize: 13,
+    fontSize: t.body,
     fontWeight: '600',
     color: colors.text,
     marginBottom: 6,
@@ -155,8 +156,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
+    paddingVertical: 11,
+    fontSize: t.md,
     color: colors.text,
   },
   btn: {
@@ -176,9 +177,9 @@ const styles = StyleSheet.create({
   btnDanger: { backgroundColor: colors.danger },
   btnDisabled: { opacity: 0.6 },
   btnPressed: { opacity: 0.85 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  btnText: { color: '#fff', fontSize: t.md, fontWeight: '600' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  error: { color: colors.danger, marginBottom: 12, fontSize: 14 },
+  error: { color: colors.danger, marginBottom: 12, fontSize: t.bodyLg },
   statCard: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -192,13 +193,13 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: t.caption,
     color: colors.textMuted,
     marginBottom: 6,
     fontWeight: '500',
   },
   statValue: {
-    fontSize: 18,
+    fontSize: t.xl,
     fontWeight: '700',
     color: colors.text,
   },
