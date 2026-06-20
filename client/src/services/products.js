@@ -1,4 +1,4 @@
-import { request } from './api';
+import request from './api';
 
 export const fetchProducts = (params = {}) => {
   const qs = new URLSearchParams(
