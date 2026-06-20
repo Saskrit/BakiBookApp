@@ -138,7 +138,7 @@ export default function ShopProfileScreen({ navigation }: Props) {
             </View>
           </View>
 
-          <Text style={styles.heroTitle}>{hasShop ? user?.shopName : 'Set up your shop'}</Text>
+          <Text style={styles.heroTitle}>{hasShop ? user?.shopName : 'Register your shop'}</Text>
           {user?.shopLocation ? (
             <View style={styles.locationRow}>
               <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">

@@ -1,7 +1,16 @@
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '';
+function resolveGoogleWebClientId(): string {
+  const fromEnv = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '';
+  if (fromEnv) return fromEnv;
+
+  const fromExtra = Constants.expoConfig?.extra?.googleWebClientId;
+  return typeof fromExtra === 'string' ? fromExtra.trim() : '';
+}
+
+const webClientId = resolveGoogleWebClientId();
 
 let configured = false;
 

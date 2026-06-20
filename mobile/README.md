@@ -1,6 +1,6 @@
 # BakiBook Mobile (React Native + Expo)
 
-Cross-platform Android and iOS app for BakiBook — one codebase, role-based UI for **shopkeepers** and **customers**, connected to the existing Node.js API.
+Cross-platform **Android** app for BakiBook — role-based UI for **shopkeepers** and **customers**, connected to the existing Node.js API. (iOS is not configured.)
 
 ## Architecture
 
@@ -17,7 +17,7 @@ Auth uses the existing **JWT API** (`/api/auth/login`, `/api/auth/register`). Fi
 ## Prerequisites
 
 - Node.js 18+
-- [Expo Go](https://expo.dev/go) on your phone, or Android Studio / Xcode for emulators
+- [Expo Go](https://expo.dev/go) on your phone, or Android Studio for emulators
 - Backend running (`npm run dev` from project root)
 - Phone and PC on the **same Wi‑Fi** (for physical device testing)
 
@@ -36,7 +36,6 @@ cp mobile/.env.example mobile/.env
 | Environment | `EXPO_PUBLIC_API_URL` |
 |-------------|------------------------|
 | Android emulator | `http://10.0.2.2:5001/api` |
-| iOS simulator | `http://localhost:5001/api` |
 | Physical device | `http://<YOUR_PC_LAN_IP>:5001/api` |
 
 If unset, Expo uses your dev machine IP from Metro (works for many setups).
@@ -53,13 +52,12 @@ npm run dev
 npm run dev:mobile
 ```
 
-Scan the QR code with Expo Go (Android) or the Camera app (iOS).
+Scan the QR code with Expo Go (Android).
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev:mobile` | Start Expo dev server |
-| `npm run android --prefix mobile` | Open on Android emulator |
-| `npm run ios --prefix mobile` | Open on iOS simulator (macOS only) |
+| `npm run android --prefix mobile` | Open on Android emulator/device |
 
 ## Demo accounts
 
@@ -124,15 +122,6 @@ Quick path:
 | Package name | `com.bakibook.app` |
 | Build output | `.aab` (Android App Bundle) |
 | Play Developer fee | $25 one-time |
-
-## Build for App Store (iOS, later)
-
-```bash
-cd mobile
-npx eas build --platform ios --profile production
-```
-
-Requires Apple Developer account ($99/year) and macOS for some steps.
 
 ## Project structure
 

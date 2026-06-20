@@ -16,6 +16,7 @@ export interface User {
   needsShopSetup?: boolean;
   isAdmin?: boolean;
   pendingLinkCount?: number;
+  createdAt?: string;
 }
 
 export interface Customer {

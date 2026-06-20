@@ -5,7 +5,7 @@ export interface DashboardRecentTransaction {
   id: string;
   type: string;
   text: string;
-  amount: string;
+  amount: number;
   time?: string;
 }
 

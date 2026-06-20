@@ -29,16 +29,23 @@
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
   },
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "postinstall": "node ./scripts/patch-gradle.js",
     "start": "expo start",
     "android": "powershell -ExecutionPolicy Bypass -File ./scripts/run-android.ps1",
     "android:expo-go": "expo start --android",
-    "ios": "expo run:ios",
     "web": "expo start --web",
     "prebuild:android": "expo prebuild --platform android --clean",
-    "build:android": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 production",
+    "build:android": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 production -NoAutoRun",
     "build:android:preview": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 preview",
+    "build:android:apk": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 apk",
+    "build:android:wait": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 preview -NoAutoRun",
+    "build:apk:local": "powershell -ExecutionPolicy Bypass -File ./scripts/build-apk-local.ps1",
+    "install:apk": "powershell -ExecutionPolicy Bypass -File ./scripts/install-eas-apk.ps1",
+    "install:apk:latest": "powershell -ExecutionPolicy Bypass -File ./scripts/install-eas-apk.ps1 preview",
     "submit:android": "npx eas-cli submit --platform android --profile production --latest"
   },
   "private": true

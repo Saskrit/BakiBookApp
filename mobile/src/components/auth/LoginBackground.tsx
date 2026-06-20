@@ -37,7 +37,7 @@ export default function LoginBackground() {
             fill="#FFFFFF"
             textAnchor="middle"
           >
-            ₹
+            Rs.
           </SvgText>
         </G>
       </Svg>

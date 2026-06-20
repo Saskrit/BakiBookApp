@@ -1,41 +1,7 @@
 import type { ExpoConfig, ConfigContext } from 'expo/config';
 
-function googleIosUrlScheme(webClientId: string): string | null {
-  const match = webClientId.match(/^([^.]+(?:\.[^.]+)*)\.apps\.googleusercontent\.com$/);
-  if (!match) return null;
-  return `com.googleusercontent.apps.${match[1]}`;
-}
-
 export default ({ config }: ConfigContext): ExpoConfig => {
   const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '';
-  const iosUrlScheme = googleWebClientId ? googleIosUrlScheme(googleWebClientId) : null;
-
-  const plugins: ExpoConfig['plugins'] = [
-    './plugins/withBakiBookAndroid.js',
-    [
-      'expo-camera',
-      {
-        cameraPermission:
-          'Allow BakiBook to access your camera to scan customer QR codes and take photos.',
-      },
-    ],
-    [
-      'expo-image-picker',
-      {
-        photosPermission:
-          'Allow BakiBook to access your photos to update profile and shop images.',
-        cameraPermission:
-          'Allow BakiBook to use your camera to take profile and shop photos.',
-      },
-    ],
-  ];
-
-  if (iosUrlScheme) {
-    plugins.push([
-      '@react-native-google-signin/google-signin',
-      { iosUrlScheme },
-    ]);
-  }
 
   return {
     ...config,
@@ -45,43 +11,52 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
+    // Android-only — no iOS builds or prebuild output
+    platforms: ['android'],
     splash: {
       image: './assets/icon.png',
       resizeMode: 'contain',
       backgroundColor: '#4C5C2D',
     },
-  ios: {
-    supportsTablet: true,
-    bundleIdentifier: 'com.bakibook.app',
-    infoPlist: {
-      NSCameraUsageDescription:
-        'BakiBook uses the camera to scan customer QR codes and update profile photos.',
-      NSPhotoLibraryUsageDescription:
-        'BakiBook uses your photo library to update your profile and shop photos.',
+    android: {
+      package: 'com.bakibook.app',
+      adaptiveIcon: {
+        backgroundColor: '#4C5C2D',
+        foregroundImage: './assets/icon.png',
+        monochromeImage: './assets/android-icon-monochrome.png',
+      },
+      permissions: ['CAMERA'],
+      predictiveBackGestureEnabled: false,
     },
-  },
-  android: {
-    package: 'com.bakibook.app',
-    versionCode: 6,
-    adaptiveIcon: {
-      backgroundColor: '#4C5C2D',
-      foregroundImage: './assets/icon.png',
-      monochromeImage: './assets/android-icon-monochrome.png',
+    web: {
+      favicon: './assets/favicon.png',
     },
-    permissions: ['CAMERA'],
-    predictiveBackGestureEnabled: false,
-  },
-  web: {
-    favicon: './assets/favicon.png',
-  },
-  plugins,
-  extra: {
-    apiUrl: process.env.EXPO_PUBLIC_API_URL,
-    googleWebClientId: googleWebClientId || undefined,
-    eas: {
-      projectId: '2a61e05a-bb22-4d04-9f06-2d7a4bfc5871',
+    plugins: [
+      './plugins/withBakiBookAndroid.js',
+      [
+        'expo-camera',
+        {
+          cameraPermission:
+            'Allow BakiBook to access your camera to scan customer QR codes and take photos.',
+        },
+      ],
+      [
+        'expo-image-picker',
+        {
+          photosPermission:
+            'Allow BakiBook to access your photos to update profile and shop images.',
+          cameraPermission:
+            'Allow BakiBook to use your camera to take profile and shop photos.',
+        },
+      ],
+    ],
+    extra: {
+      apiUrl: process.env.EXPO_PUBLIC_API_URL,
+      googleWebClientId: googleWebClientId || undefined,
+      eas: {
+        projectId: '2a61e05a-bb22-4d04-9f06-2d7a4bfc5871',
+      },
     },
-  },
-  owner: 'saskreet',
+    owner: 'saskreet',
   } as ExpoConfig;
 };

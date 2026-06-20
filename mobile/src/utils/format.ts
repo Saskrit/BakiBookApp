@@ -1,5 +1,22 @@
+/** Parse amounts that may already include currency symbols or grouping. */
+export const parseMoneyAmount = (value: number | string | undefined): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (value == null || value === '') return 0;
+  const cleaned = String(value).replace(/[^\d.-]/g, '');
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+/** Nepali Rupee (NPR) — always formatted as Rs. */
 export const formatRs = (amount: number | string | undefined) =>
-  `Rs. ${Number(amount || 0).toLocaleString('en-NP')}`;
+  `Rs. ${parseMoneyAmount(amount).toLocaleString('en-NP', { maximumFractionDigits: 0 })}`;
+
+export const isNewAccount = (createdAt?: string, withinHours = 48) => {
+  if (!createdAt) return false;
+  const created = new Date(createdAt).getTime();
+  if (Number.isNaN(created)) return false;
+  return Date.now() - created < withinHours * 60 * 60 * 1000;
+};
 
 export const formatDate = (value?: string | Date) => {
   if (!value) return '';

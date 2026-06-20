@@ -335,14 +335,14 @@ export const getDashboardStats = async (req, res) => {
         id: tx._id.toString(),
         type: 'credit',
         text: `Credit added to ${tx.customer?.name || 'customer'}`,
-        amount: `+ Rs. ${tx.total.toLocaleString('en-NP')}`,
+        amount: tx.total,
         time: tx.createdAt,
       })),
       ...recentPayments.map((p) => ({
         id: p._id.toString(),
         type: 'payment',
         text: `Payment received from ${p.customer?.name || 'customer'}`,
-        amount: `- Rs. ${p.amount.toLocaleString('en-NP')}`,
+        amount: p.amount,
         time: p.createdAt,
       })),
     ]

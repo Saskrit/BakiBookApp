@@ -13,6 +13,7 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import Sparkline from '../../components/dashboard/Sparkline';
 import { LoadingState } from '../../components/ui';
@@ -29,6 +30,8 @@ import {
   formatRelativeTime,
   formatRs,
   getInitials,
+  isNewAccount,
+  parseMoneyAmount,
   sumSlice,
   trendPercent,
 } from '../../utils/format';
@@ -43,9 +46,6 @@ const parseCustomerName = (text: string) => {
   const match = text.match(/(?:to|from)\s+(.+)$/i);
   return match?.[1]?.trim() || 'Customer';
 };
-
-const parseAmountValue = (amount: string) =>
-  Number(amount.replace(/[^\d.-]/g, '')) || 0;
 
 function SectionHeader({
   title,
@@ -115,7 +115,7 @@ function QuickAction({
 function TransactionRow({ item }: { item: DashboardRecentTransaction }) {
   const name = parseCustomerName(item.text);
   const isPayment = item.type === 'payment';
-  const amount = parseAmountValue(item.amount);
+  const amount = parseMoneyAmount(item.amount);
 
   return (
     <View style={styles.txRow}>
@@ -254,7 +254,11 @@ export default function DashboardScreen() {
   const monthNet = monthCollection - monthCredit;
 
   const firstName = user?.fullName?.split(' ')[0] || 'Shopkeeper';
-  const shopName = user?.shopName || 'Your Shop';
+  const hasShop = Boolean(user?.shopName?.trim());
+  const isNewUser = isNewAccount(user?.createdAt);
+  const greetingLine = isNewUser ? `Welcome, ${firstName}` : `Welcome back, ${firstName}`;
+  const openShopProfile = () => navigation.getParent()?.navigate('ShopProfile');
+  const avatarLabel = hasShop ? user!.shopName! : user?.fullName || 'Shopkeeper';
 
   if (loading) return <LoadingState />;
 
@@ -267,61 +271,86 @@ export default function DashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <LinearGradient
+          colors={[colors.primaryDark, colors.primary, '#7A9249']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.header, { paddingTop: insets.top + 10 }]}
+        >
+          <View style={styles.headerOrbLarge} />
+          <View style={styles.headerOrbSmall} />
+
           <View style={styles.headerTop}>
-            <Pressable style={styles.headerIconBtn} onPress={() => navigation.navigate('Settings')}>
-              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+            <Pressable style={styles.headerGlassBtn} onPress={() => navigation.navigate('Settings')}>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
                 <Path d="M4 7 H20 M4 12 H20 M4 17 H20" stroke="#FFFFFF" strokeWidth={2.5} strokeLinecap="round" />
               </Svg>
             </Pressable>
             <Text style={styles.headerBrand}>BakiBook</Text>
             <View style={styles.headerActions}>
-              <Pressable style={styles.headerIconBtn}>
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                  <Circle cx={11} cy={11} r={7} stroke="#FFFFFF" strokeWidth={2} />
-                  <Path d="M20 20 L16.5 16.5" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
-                </Svg>
-              </Pressable>
-              <Pressable style={styles.headerIconBtn}>
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+              <Pressable style={styles.headerGlassBtn}>
+                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
                   <Path
                     d="M12 4 C8 4 5 7 5 10 C5 16 3 17 3 17 H21 C21 17 19 16 19 10 C19 7 16 4 12 4 Z"
                     stroke="#FFFFFF"
                     strokeWidth={2}
                   />
                 </Svg>
-                <View style={styles.notifBadge}>
-                  <Text style={styles.notifBadgeText}>{Math.min(reminders.length, 9)}</Text>
-                </View>
+                {reminders.length > 0 ? (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>{Math.min(reminders.length, 9)}</Text>
+                  </View>
+                ) : null}
               </Pressable>
-              {user?.shopImage ? (
-                <Image source={{ uri: user.shopImage }} style={styles.profileImg} />
-              ) : (
-                <View style={styles.profileImgPlaceholder}>
-                  <Text style={styles.profileInitial}>{getInitials(shopName)}</Text>
-                </View>
-              )}
             </View>
           </View>
 
-          <View style={styles.headerMain}>
-            <View style={styles.headerGreeting}>
-              <Text style={styles.welcomeText}>Welcome back, {firstName} 👋</Text>
-              <View style={styles.shopRow}>
-                <Text style={styles.shopName} numberOfLines={1}>
-                  {shopName}
-                </Text>
-                <Text style={styles.shopChevron}>▾</Text>
-              </View>
-            </View>
-            <Pressable
-              style={styles.overviewBtn}
-              onPress={() => navigation.navigate('Reports')}
-            >
-              <Text style={styles.overviewBtnText}>Business Overview ›</Text>
+          <View style={styles.headerHero}>
+            <Pressable onPress={openShopProfile} style={styles.headerAvatarWrap}>
+              {user?.shopImage ? (
+                <Image source={{ uri: user.shopImage }} style={styles.headerAvatar} />
+              ) : (
+                <View style={styles.headerAvatarPlaceholder}>
+                  <Text style={styles.headerAvatarInitial}>{getInitials(avatarLabel)}</Text>
+                </View>
+              )}
+              {!hasShop ? <View style={styles.headerAvatarDot} /> : null}
             </Pressable>
+
+            <View style={styles.headerGreeting}>
+              <Text style={styles.welcomeText}>
+                {greetingLine} {isNewUser ? '✨' : '👋'}
+              </Text>
+              {hasShop ? (
+                <Pressable onPress={openShopProfile} style={styles.shopRow}>
+                  <Text style={styles.shopName} numberOfLines={1}>
+                    {user!.shopName}
+                  </Text>
+                  <Text style={styles.shopChevron}>▾</Text>
+                </Pressable>
+              ) : (
+                <Pressable onPress={openShopProfile} style={styles.registerShopBtn}>
+                  <Text style={styles.registerShopText}>Register your shop</Text>
+                  <Text style={styles.registerShopArrow}>›</Text>
+                </Pressable>
+              )}
+              {!hasShop ? (
+                <Text style={styles.shopHint}>Add shop name, location & photo to get started</Text>
+              ) : null}
+            </View>
           </View>
-        </View>
+
+          <View style={styles.headerFooter}>
+            <Pressable style={styles.overviewBtn} onPress={() => navigation.navigate('Reports')}>
+              <Text style={styles.overviewBtnText}>Business Overview</Text>
+              <Text style={styles.overviewBtnArrow}>›</Text>
+            </Pressable>
+            <View style={styles.headerStatPill}>
+              <Text style={styles.headerStatLabel}>Outstanding</Text>
+              <Text style={styles.headerStatValue}>{formatRs(stats.totalOutstanding)}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         <View style={styles.body}>
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -548,35 +577,59 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F3F4F6' },
   scroll: { flex: 1 },
   header: {
-    backgroundColor: colors.primaryDark,
     paddingHorizontal: 16,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    paddingBottom: 22,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    overflow: 'hidden',
+  },
+  headerOrbLarge: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    top: -40,
+    right: -30,
+  },
+  headerOrbSmall: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    bottom: 20,
+    left: -20,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 18,
   },
   headerBrand: {
     color: '#FFFFFF',
-    fontSize: t.xxl,
+    fontSize: t.lg,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    opacity: 0.95,
   },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerGlassBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   notifBadge: {
     position: 'absolute',
-    top: 4,
-    right: 2,
+    top: 6,
+    right: 6,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
@@ -586,32 +639,96 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   notifBadgeText: { color: '#FFF', fontSize: t.sm, fontWeight: '700' },
-  profileImg: { width: 36, height: 36, borderRadius: 18, marginLeft: 4 },
-  profileImgPlaceholder: {
-    width: 36,
-    height: 36,
+  headerHero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+  },
+  headerAvatarWrap: { position: 'relative' },
+  headerAvatar: {
+    width: 56,
+    height: 56,
     borderRadius: 18,
-    marginLeft: 4,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  headerAvatarPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  profileInitial: { color: '#FFF', fontWeight: '700', fontSize: t.body },
-  headerMain: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 },
+  headerAvatarInitial: { color: '#FFF', fontWeight: '800', fontSize: t.lg },
+  headerAvatarDot: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.warning,
+    borderWidth: 2,
+    borderColor: colors.primaryDark,
+  },
   headerGreeting: { flex: 1 },
-  welcomeText: { color: '#FFFFFF', fontSize: t.xl, fontWeight: '700', marginBottom: 6 },
-  shopRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  shopName: { color: 'rgba(255,255,255,0.9)', fontSize: t.md, fontWeight: '500', flexShrink: 1 },
-  shopChevron: { color: 'rgba(255,255,255,0.8)', fontSize: t.body },
-  overviewBtn: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  welcomeText: { color: '#FFFFFF', fontSize: t.xl, fontWeight: '800', marginBottom: 6 },
+  shopRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' },
+  shopName: { color: 'rgba(255,255,255,0.92)', fontSize: t.md, fontWeight: '600', flexShrink: 1 },
+  shopChevron: { color: 'rgba(255,255,255,0.75)', fontSize: t.body },
+  registerShopBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: 'rgba(255,255,255,0.3)',
+    gap: 4,
   },
-  overviewBtnText: { color: '#FFFFFF', fontSize: t.sm, fontWeight: '600' },
+  registerShopText: { color: '#FFFFFF', fontSize: t.body, fontWeight: '700' },
+  registerShopArrow: { color: '#FFFFFF', fontSize: t.lg, fontWeight: '600' },
+  shopHint: {
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: t.sm,
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  headerFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  overviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+  overviewBtnText: { color: '#FFFFFF', fontSize: t.body, fontWeight: '700' },
+  overviewBtnArrow: { color: 'rgba(255,255,255,0.85)', fontSize: t.lg, fontWeight: '600' },
+  headerStatPill: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  headerStatLabel: { color: 'rgba(255,255,255,0.75)', fontSize: t.xs, fontWeight: '600' },
+  headerStatValue: { color: '#FFFFFF', fontSize: t.md, fontWeight: '800', marginTop: 2 },
   body: { paddingHorizontal: 16, paddingTop: 16 },
   error: { color: colors.danger, marginBottom: 12, fontSize: t.bodyLg },
   statsScroll: { gap: 12, paddingBottom: 4, paddingRight: 4 },

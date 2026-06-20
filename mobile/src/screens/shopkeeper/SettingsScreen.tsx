@@ -235,7 +235,8 @@ export default function SettingsScreen() {
     },
   ];
 
-  const shopName = user?.shopName?.trim() || 'Your Shop';
+  const hasShop = Boolean(user?.shopName?.trim());
+  const shopName = hasShop ? user!.shopName! : 'Register your shop';
   const profileUri = user?.profileImage;
   const shopUri = user?.shopImage;
   const verified = user?.isShopVerified || user?.shopVerificationStatus === 'verified';
